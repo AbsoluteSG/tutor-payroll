@@ -14,6 +14,16 @@ export function AcceptInviteForm({ token }: { token: string }) {
     <form action={formAction} className="grid gap-4">
       <input type="hidden" name="token" value={token} />
       <div className="grid gap-2">
+        <Label htmlFor="username">Username (optional)</Label>
+        <Input
+          id="username"
+          name="username"
+          autoComplete="username"
+          placeholder="e.g. taylor — lets you sign in without typing your email"
+          pattern="[a-zA-Z0-9][a-zA-Z0-9._\-]{2,29}"
+        />
+      </div>
+      <div className="grid gap-2">
         <Label htmlFor="password">Choose a password</Label>
         <Input id="password" name="password" type="password" autoComplete="new-password" minLength={8} required />
       </div>

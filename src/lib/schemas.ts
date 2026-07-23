@@ -66,7 +66,15 @@ export const inviteSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(120),
 });
 
+/** Lowercase letters, digits, dot/dash/underscore; no "@" so it can't collide with emails. */
+export const usernameSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .regex(/^[a-z0-9][a-z0-9._-]{2,29}$/, "Username: 3–30 chars, letters/numbers/._- only");
+
 export const acceptInviteSchema = z.object({
   token: z.string().min(1),
   password: z.string().min(8, "Password must be at least 8 characters").max(200),
+  username: usernameSchema.optional(),
 });

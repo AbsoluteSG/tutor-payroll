@@ -24,15 +24,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
     Credentials({
       credentials: {
-        email: {},
+        identifier: {},
         password: {},
       },
       async authorize(credentials) {
-        const email = typeof credentials?.email === "string" ? credentials.email.toLowerCase().trim() : "";
+        const identifier =
+          typeof credentials?.identifier === "string" ? credentials.identifier.toLowerCase().trim() : "";
         const password = typeof credentials?.password === "string" ? credentials.password : "";
-        if (!email || !password) return null;
+        if (!identifier || !password) return null;
 
-        const user = await prisma.user.findUnique({ where: { email } });
+        // An identifier containing "@" is an email; anything else is a username.
+        const user = await prisma.user.findUnique({
+          where: identifier.includes("@") ? { email: identifier } : { username: identifier },
+        });
         if (!user || !user.active) return null;
 
         const valid = await bcrypt.compare(password, user.passwordHash);

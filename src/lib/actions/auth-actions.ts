@@ -12,13 +12,13 @@ export type ActionResult = { error?: string } | undefined;
 export async function loginAction(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
   try {
     await signIn("credentials", {
-      email: formData.get("email"),
+      identifier: formData.get("identifier"),
       password: formData.get("password"),
       redirect: false,
     });
   } catch (err) {
     if (err instanceof AuthError) {
-      return { error: "Invalid email or password" };
+      return { error: "Invalid email/username or password" };
     }
     throw err;
   }
@@ -33,11 +33,12 @@ export async function acceptInviteAction(_prev: ActionResult, formData: FormData
   const parsed = acceptInviteSchema.safeParse({
     token: formData.get("token"),
     password: formData.get("password"),
+    username: formData.get("username") || undefined,
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0].message };
   }
-  const { token, password } = parsed.data;
+  const { token, password, username } = parsed.data;
 
   const invite = await prisma.inviteToken.findUnique({ where: { token } });
   if (!invite || invite.usedAt || invite.expiresAt < new Date()) {
@@ -49,16 +50,21 @@ export async function acceptInviteAction(_prev: ActionResult, formData: FormData
     return { error: "An account with this email already exists. Try logging in." };
   }
 
+  if (username) {
+    const taken = await prisma.user.findUnique({ where: { username } });
+    if (taken) return { error: "That username is already taken — pick another." };
+  }
+
   const passwordHash = await bcrypt.hash(password, 10);
   await prisma.$transaction([
     prisma.user.create({
-      data: { email: invite.email, name: invite.name, role: invite.role, passwordHash },
+      data: { email: invite.email, name: invite.name, role: invite.role, passwordHash, username },
     }),
     prisma.inviteToken.update({ where: { token }, data: { usedAt: new Date() } }),
   ]);
 
   await signIn("credentials", {
-    email: invite.email,
+    identifier: invite.email,
     password,
     redirect: false,
   });

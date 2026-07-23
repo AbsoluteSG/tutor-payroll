@@ -1,5 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { moneyString, classSubmissionSchema } from "./schemas";
+import { moneyString, classSubmissionSchema, usernameSchema } from "./schemas";
+
+describe("usernameSchema", () => {
+  it("accepts valid usernames and lowercases them", () => {
+    expect(usernameSchema.parse("Taylor_1")).toBe("taylor_1");
+    expect(usernameSchema.parse("abc")).toBe("abc");
+    expect(usernameSchema.parse("first.last-2")).toBe("first.last-2");
+  });
+
+  it("rejects emails, short names, and bad characters", () => {
+    expect(usernameSchema.safeParse("a@b.com").success).toBe(false);
+    expect(usernameSchema.safeParse("ab").success).toBe(false);
+    expect(usernameSchema.safeParse(".starts-with-dot").success).toBe(false);
+    expect(usernameSchema.safeParse("has space").success).toBe(false);
+  });
+});
 
 describe("moneyString", () => {
   it("accepts whole and 2-decimal amounts", () => {

@@ -12,9 +12,10 @@ async function main() {
   const managerPassword = process.env.SEED_MANAGER_PASSWORD ?? "admin1234";
   const manager = await prisma.user.upsert({
     where: { email: "siphongames.dev@gmail.com" },
-    update: {},
+    update: { username: "admin" },
     create: {
       email: "siphongames.dev@gmail.com",
+      username: "admin",
       name: "Manager",
       role: "MANAGER",
       passwordHash: await bcrypt.hash(managerPassword, 10),

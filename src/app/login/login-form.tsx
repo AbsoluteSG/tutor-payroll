@@ -20,8 +20,8 @@ export function LoginForm() {
       <CardContent>
         <form action={formAction} className="grid gap-4">
           <div className="grid gap-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" name="email" type="email" autoComplete="email" required />
+            <Label htmlFor="identifier">Email or username</Label>
+            <Input id="identifier" name="identifier" type="text" autoComplete="username" required />
           </div>
           <div className="grid gap-2">
             <Label htmlFor="password">Password</Label>
