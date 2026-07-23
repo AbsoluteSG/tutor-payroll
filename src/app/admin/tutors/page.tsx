@@ -49,7 +49,7 @@ export default async function TutorsPage() {
             </TableHeader>
             <TableBody>
               {tutors.map((t) => (
-                <TableRow key={t.id}>
+                <TableRow key={t.id} data-reveal>
                   <TableCell>
                     <Link href={`/admin/tutors/${t.id}`} className="font-medium underline-offset-2 hover:underline">
                       {t.name}

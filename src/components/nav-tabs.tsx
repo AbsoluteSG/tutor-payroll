@@ -1,8 +1,14 @@
 "use client";
 
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+
+/** Dims + pulses the tab label while its route segment is loading. */
+function TabLabel({ children }: { children: React.ReactNode }) {
+  const { pending } = useLinkStatus();
+  return <span className={pending ? "animate-pulse opacity-60" : undefined}>{children}</span>;
+}
 
 export function NavTabs({ links }: { links: { href: string; label: string }[] }) {
   const pathname = usePathname();
@@ -27,7 +33,7 @@ export function NavTabs({ links }: { links: { href: string; label: string }[] })
                 : "border-transparent text-muted-foreground hover:text-foreground",
             )}
           >
-            {l.label}
+            <TabLabel>{l.label}</TabLabel>
           </Link>
         );
       })}

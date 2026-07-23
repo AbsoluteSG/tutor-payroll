@@ -5,6 +5,7 @@ import { acceptInviteAction } from "@/lib/actions/auth-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 
 export function AcceptInviteForm({ token }: { token: string }) {
   const [state, formAction, pending] = useActionState(acceptInviteAction, undefined);
@@ -18,6 +19,7 @@ export function AcceptInviteForm({ token }: { token: string }) {
       </div>
       {state?.error && <p className="text-sm text-red-400">{state.error}</p>}
       <Button type="submit" disabled={pending}>
+        {pending && <Spinner />}
         {pending ? "Creating account…" : "Create account"}
       </Button>
     </form>

@@ -30,6 +30,11 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-background font-sans">
         {children}
+        {/* Content fades out at the viewport edge instead of hard-clipping. */}
+        <div
+          aria-hidden
+          className="pointer-events-none fixed inset-x-0 bottom-0 z-40 h-16 bg-linear-to-t from-background to-transparent"
+        />
         <Toaster richColors />
       </body>
     </html>

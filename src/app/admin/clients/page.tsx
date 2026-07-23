@@ -51,7 +51,7 @@ export default async function ClientsPage() {
               </TableHeader>
               <TableBody>
                 {clients.map((c) => (
-                  <TableRow key={c.id}>
+                  <TableRow key={c.id} data-reveal>
                     <TableCell>
                       <Link
                         href={`/admin/clients/${c.id}`}

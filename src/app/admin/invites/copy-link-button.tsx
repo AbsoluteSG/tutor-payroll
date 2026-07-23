@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
 export function CopyLinkButton({ url }: { url: string }) {
@@ -14,6 +15,7 @@ export function CopyLinkButton({ url }: { url: string }) {
       onClick={async () => {
         await navigator.clipboard.writeText(url);
         setCopied(true);
+        toast.success("Invite link copied to clipboard");
         setTimeout(() => setCopied(false), 1500);
       }}
     >

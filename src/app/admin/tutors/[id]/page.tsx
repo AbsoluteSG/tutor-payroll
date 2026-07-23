@@ -130,7 +130,7 @@ export default async function TutorProfilePage({ params }: { params: Promise<{ i
               </TableHeader>
               <TableBody>
                 {payments.map((p) => (
-                  <TableRow key={p.id}>
+                  <TableRow key={p.id} data-reveal>
                     <TableCell className="whitespace-nowrap">
                       {p.paidAt.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                     </TableCell>

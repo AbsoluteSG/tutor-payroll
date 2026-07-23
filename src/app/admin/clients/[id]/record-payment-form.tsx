@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState } from "react";
 import { recordClientPaymentAction } from "@/lib/actions/admin-actions";
+import { useActionFeedback } from "@/lib/use-action-feedback";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Select,
   SelectContent,
@@ -18,7 +19,10 @@ function todayISO() {
 }
 
 export function RecordPaymentForm({ clientId }: { clientId: string }) {
-  const [state, formAction, pending] = useActionState(recordClientPaymentAction, undefined);
+  const { formAction, error, pending } = useActionFeedback(
+    (fd) => recordClientPaymentAction(undefined, fd),
+    { success: "Payment recorded" },
+  );
 
   return (
     <form action={formAction} className="flex flex-wrap items-end gap-3">
@@ -59,9 +63,10 @@ export function RecordPaymentForm({ clientId }: { clientId: string }) {
         <Input name="note" placeholder="e.g. Zelle confirmation #" />
       </div>
       <Button type="submit" disabled={pending}>
+        {pending && <Spinner />}
         {pending ? "Recording…" : "Record"}
       </Button>
-      {state?.error && <p className="w-full text-sm text-red-400">{state.error}</p>}
+      {error && <p className="w-full text-sm text-red-400">{error}</p>}
     </form>
   );
 }

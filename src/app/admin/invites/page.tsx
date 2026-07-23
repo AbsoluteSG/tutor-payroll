@@ -53,7 +53,7 @@ export default async function InvitesPage() {
                 {invites.map((inv) => {
                   const expired = !inv.usedAt && inv.expiresAt < new Date();
                   return (
-                    <TableRow key={inv.token}>
+                    <TableRow key={inv.token} data-reveal>
                       <TableCell>{inv.name}</TableCell>
                       <TableCell className="text-muted-foreground">{inv.email}</TableCell>
                       <TableCell>

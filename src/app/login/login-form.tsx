@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 
 export function LoginForm() {
   const [state, formAction, pending] = useActionState(loginAction, undefined);
@@ -28,6 +29,7 @@ export function LoginForm() {
           </div>
           {state?.error && <p className="text-sm text-red-400">{state.error}</p>}
           <Button type="submit" disabled={pending}>
+            {pending && <Spinner />}
             {pending ? "Signing in…" : "Sign in"}
           </Button>
         </form>

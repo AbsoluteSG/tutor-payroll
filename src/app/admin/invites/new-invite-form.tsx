@@ -1,12 +1,16 @@
 "use client";
 
-import { useActionState } from "react";
 import { createInviteAction } from "@/lib/actions/admin-actions";
+import { useActionFeedback } from "@/lib/use-action-feedback";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
 
 export function NewInviteForm() {
-  const [state, formAction, pending] = useActionState(createInviteAction, undefined);
+  const { formAction, error, pending } = useActionFeedback(
+    (fd) => createInviteAction(undefined, fd),
+    { success: "Invite created — copy the link from the list below" },
+  );
 
   return (
     <form action={formAction} className="flex flex-wrap items-end gap-3">
@@ -19,9 +23,10 @@ export function NewInviteForm() {
         <Input name="email" type="email" placeholder="tutor@example.com" required />
       </div>
       <Button type="submit" disabled={pending}>
+        {pending && <Spinner />}
         {pending ? "Creating…" : "Create invite"}
       </Button>
-      {state?.error && <p className="w-full text-sm text-red-400">{state.error}</p>}
+      {error && <p className="w-full text-sm text-red-400">{error}</p>}
     </form>
   );
 }

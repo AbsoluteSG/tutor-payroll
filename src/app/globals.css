@@ -128,3 +128,25 @@
     @apply font-sans;
   }
 }
+
+/* Cascading scroll reveal — elements tagged data-reveal rise + fade in as
+   they enter the viewport, scrubbed by scroll position (each row starts its
+   animation when *it* enters, so lists cascade naturally). The keyframes only
+   define `from`, so the settled state is the element's natural style and
+   utility classes like opacity-50 (voided rows) still apply. Browsers without
+   scroll-driven animation support simply show content immediately. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    [data-reveal] {
+      animation: reveal-rise linear both;
+      animation-timeline: view();
+      animation-range: entry 5% entry 70%;
+    }
+    @keyframes reveal-rise {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+    }
+  }
+}

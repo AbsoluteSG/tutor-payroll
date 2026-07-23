@@ -68,7 +68,7 @@ export function ClassTable({
       </TableHeader>
       <TableBody>
         {rows.map((row) => (
-          <TableRow key={row.id} className={row.voided ? "opacity-50" : undefined}>
+          <TableRow key={row.id} data-reveal className={row.voided ? "opacity-50" : undefined}>
             <TableCell className="whitespace-nowrap">
               {row.date.toLocaleDateString("en-US", { timeZone: "UTC", month: "short", day: "numeric", year: "numeric" })}
               {row.voided && (

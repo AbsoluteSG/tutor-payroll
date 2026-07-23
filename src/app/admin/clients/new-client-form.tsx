@@ -1,12 +1,14 @@
 "use client";
 
-import { useActionState } from "react";
 import { createClientAction } from "@/lib/actions/admin-actions";
+import { useActionFeedback } from "@/lib/use-action-feedback";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
 
 export function NewClientForm() {
-  const [state, formAction, pending] = useActionState(createClientAction, undefined);
+  // Success navigates to the new client's profile, so no toast needed.
+  const { formAction, error, pending } = useActionFeedback((fd) => createClientAction(undefined, fd));
 
   return (
     <form action={formAction} className="flex flex-wrap items-end gap-3">
@@ -19,9 +21,10 @@ export function NewClientForm() {
         <Input name="displayName" placeholder="Smith family" />
       </div>
       <Button type="submit" disabled={pending}>
+        {pending && <Spinner />}
         {pending ? "Creating…" : "Create client"}
       </Button>
-      {state?.error && <p className="w-full text-sm text-red-400">{state.error}</p>}
+      {error && <p className="w-full text-sm text-red-400">{error}</p>}
     </form>
   );
 }

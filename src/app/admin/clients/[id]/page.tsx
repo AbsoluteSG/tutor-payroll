@@ -91,7 +91,7 @@ export default async function ClientProfilePage({ params }: { params: Promise<{ 
               </TableHeader>
               <TableBody>
                 {payments.map((p) => (
-                  <TableRow key={p.id}>
+                  <TableRow key={p.id} data-reveal>
                     <TableCell className="whitespace-nowrap">
                       {p.receivedAt.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                     </TableCell>

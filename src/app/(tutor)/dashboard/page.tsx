@@ -6,10 +6,16 @@ import { formatUSD } from "@/lib/money";
 import { StatCards } from "@/components/stat-cards";
 import { ClassTable } from "@/components/class-table";
 import { buttonVariants } from "@/components/ui/button";
+import { SubmittedToast } from "./submitted-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-export default async function TutorDashboard() {
+export default async function TutorDashboard({
+  searchParams,
+}: {
+  searchParams: Promise<{ submitted?: string }>;
+}) {
   const user = await requireUser();
+  const { submitted } = await searchParams;
   const [balance, recent] = await Promise.all([
     getTutorBalance(user.id),
     prisma.classSession.findMany({
@@ -22,6 +28,7 @@ export default async function TutorDashboard() {
 
   return (
     <div className="grid gap-6">
+      {submitted === "1" && <SubmittedToast />}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Hi, {user.name}</h1>
         <Link href="/submit" className={buttonVariants()}>

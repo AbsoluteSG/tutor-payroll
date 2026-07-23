@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState } from "react";
 import { upsertRateCardAction, deleteRateCardAction } from "@/lib/actions/admin-actions";
+import { useActionFeedback } from "@/lib/use-action-feedback";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Select,
   SelectContent,
@@ -37,7 +38,11 @@ export function RateCardEditor({
   rateCards: RateCardRow[];
   clients: { id: string; label: string }[];
 }) {
-  const [state, formAction, pending] = useActionState(upsertRateCardAction, undefined);
+  const { formAction, error, pending } = useActionFeedback(
+    (fd) => upsertRateCardAction(undefined, fd),
+    { success: "Rate saved" },
+  );
+  const remove = useActionFeedback((fd) => deleteRateCardAction(fd), { success: "Rate removed" });
   const unassigned = clients.filter((c) => !rateCards.some((rc) => rc.clientId === c.id));
 
   return (
@@ -54,14 +59,14 @@ export function RateCardEditor({
           </TableHeader>
           <TableBody>
             {rateCards.map((rc) => (
-              <TableRow key={rc.id}>
+              <TableRow key={rc.id} data-reveal>
                 <TableCell>{rc.clientName}</TableCell>
                 <TableCell className="text-right tabular-nums">{rc.tutorRate}</TableCell>
                 <TableCell className="text-right tabular-nums">{rc.defaultFullCost || "—"}</TableCell>
                 <TableCell className="text-right">
-                  <form action={deleteRateCardAction}>
+                  <form action={remove.formAction}>
                     <input type="hidden" name="id" value={rc.id} />
-                    <Button variant="ghost" size="sm" type="submit">
+                    <Button variant="ghost" size="sm" type="submit" disabled={remove.pending}>
                       Remove
                     </Button>
                   </form>
@@ -103,9 +108,10 @@ export function RateCardEditor({
           <Input name="defaultFullCost" inputMode="decimal" placeholder="optional" />
         </div>
         <Button type="submit" size="sm" disabled={pending}>
+          {pending && <Spinner />}
           {pending ? "Saving…" : "Save rate"}
         </Button>
-        {state?.error && <p className="w-full text-sm text-red-400">{state.error}</p>}
+        {error && <p className="w-full text-sm text-red-400">{error}</p>}
         {unassigned.length === 0 && clients.length > 0 && rateCards.length === clients.length && (
           <p className="w-full text-xs text-muted-foreground">All clients assigned — picking one updates its rate.</p>
         )}
