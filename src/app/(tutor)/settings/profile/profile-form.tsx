@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { updateProfileAction } from "@/lib/actions/profile-actions";
 import { useActionFeedback } from "@/lib/use-action-feedback";
 import { Button } from "@/components/ui/button";
@@ -17,15 +18,29 @@ export function ProfileForm({
     { success: "Profile updated" },
   );
 
+  // Controlled so a post-save revalidation (which feeds new `initial` values)
+  // doesn't change an uncontrolled field's defaultValue — Base UI warns on that.
+  const [name, setName] = useState(initial.name);
+  const [email, setEmail] = useState(initial.email);
+  const [username, setUsername] = useState(initial.username);
+
   return (
     <form action={formAction} className="grid gap-4">
       <div className="grid gap-2">
         <Label htmlFor="name">Name</Label>
-        <Input id="name" name="name" defaultValue={initial.name} required />
+        <Input id="name" name="name" value={name} onChange={(e) => setName(e.target.value)} required />
       </div>
       <div className="grid gap-2">
         <Label htmlFor="email">Email</Label>
-        <Input id="email" name="email" type="email" autoComplete="email" defaultValue={initial.email} required />
+        <Input
+          id="email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
       </div>
       <div className="grid gap-2">
         <Label htmlFor="username">Username</Label>
@@ -33,7 +48,8 @@ export function ProfileForm({
           id="username"
           name="username"
           autoComplete="username"
-          defaultValue={initial.username}
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
           placeholder="Optional — sign in without typing your email"
           pattern="[a-zA-Z0-9][a-zA-Z0-9._\-]{2,29}"
         />
