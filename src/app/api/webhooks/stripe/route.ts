@@ -22,16 +22,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
+  // Onboarding status is checked live against the Accounts v2 API (see
+  // refreshStripeStatus) — no account webhook needed. This endpoint only
+  // handles money-movement events.
   switch (event.type) {
-    // Tutor finished (or updated) Express onboarding.
-    case "account.updated": {
-      const account = event.data.object;
-      await prisma.user.updateMany({
-        where: { stripeAccountId: account.id },
-        data: { stripeOnboarded: Boolean(account.payouts_enabled) },
-      });
-      break;
-    }
     // A transfer we created was reversed (e.g. insufficient funds recovery).
     case "transfer.reversed": {
       const transfer = event.data.object;

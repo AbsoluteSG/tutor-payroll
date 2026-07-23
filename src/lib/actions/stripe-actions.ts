@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser, requireManager } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getStripe, stripeConfigured } from "@/lib/stripe";
+import { getStripe, stripeConfigured, isRecipientReady } from "@/lib/stripe";
 import { getTutorBalance } from "@/lib/balances";
 import { moneyString } from "@/lib/schemas";
 import { Prisma } from "@/generated/prisma/client";
@@ -12,7 +12,14 @@ import type { ActionResult } from "@/lib/actions/auth-actions";
 
 const appUrl = () => process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
-/** Tutor: start (or resume) Stripe Express onboarding. */
+/**
+ * Tutor: start (or resume) Stripe onboarding.
+ *
+ * Uses Accounts v2 recipient accounts (the current Connect API — v1
+ * `type: "express"` is deprecated): express dashboard, platform collects
+ * fees and owns losses, only the stripe_transfers capability is requested
+ * so tutor onboarding stays as short as possible.
+ */
 export async function startStripeOnboardingAction(): Promise<void> {
   const user = await requireUser();
   if (!stripeConfigured()) {
@@ -25,24 +32,70 @@ export async function startStripeOnboardingAction(): Promise<void> {
     select: { stripeAccountId: true },
   }))?.stripeAccountId;
 
-  if (!accountId) {
-    const account = await stripe.accounts.create({
-      type: "express",
-      email: user.email,
-      capabilities: { transfers: { requested: true } },
-      business_type: "individual",
-    });
-    accountId = account.id;
-    await prisma.user.update({ where: { id: user.id }, data: { stripeAccountId: accountId } });
-  }
+  let onboardingUrl: string;
+  try {
+    if (!accountId) {
+      const account = await stripe.v2.core.accounts.create({
+        contact_email: user.email,
+        display_name: user.name,
+        dashboard: "express",
+        identity: {
+          country: "us",
+          entity_type: "individual",
+        },
+        configuration: {
+          recipient: {
+            capabilities: {
+              stripe_balance: {
+                stripe_transfers: { requested: true },
+              },
+            },
+          },
+        },
+        defaults: {
+          responsibilities: {
+            fees_collector: "application",
+            losses_collector: "application",
+          },
+          locales: ["en-US"],
+        },
+      });
+      accountId = account.id;
+      await prisma.user.update({ where: { id: user.id }, data: { stripeAccountId: accountId } });
+    }
 
-  const link = await stripe.accountLinks.create({
-    account: accountId,
-    refresh_url: `${appUrl()}/settings/payouts?refresh=1`,
-    return_url: `${appUrl()}/settings/payouts?onboarded=1`,
-    type: "account_onboarding",
-  });
-  redirect(link.url);
+    const link = await stripe.v2.core.accountLinks.create({
+      account: accountId,
+      use_case: {
+        type: "account_onboarding",
+        account_onboarding: {
+          configurations: ["recipient"],
+          refresh_url: `${appUrl()}/settings/payouts?refresh=1`,
+          return_url: `${appUrl()}/settings/payouts?onboarded=1`,
+        },
+      },
+    });
+    onboardingUrl = link.url;
+  } catch (err) {
+    console.error("[stripe] onboarding failed:", err);
+    redirect("/settings/payouts?error=stripe-error");
+  }
+  redirect(onboardingUrl);
+}
+
+/**
+ * Refresh a tutor's onboarding status from Stripe and cache it on the user.
+ * Called from the payouts page — no webhook required for onboarding status.
+ */
+export async function refreshStripeStatus(userId: string, accountId: string): Promise<boolean> {
+  try {
+    const ready = await isRecipientReady(getStripe(), accountId);
+    await prisma.user.update({ where: { id: userId }, data: { stripeOnboarded: ready } });
+    return ready;
+  } catch (err) {
+    console.error("[stripe] status refresh failed:", err);
+    return false;
+  }
 }
 
 /** Manager: pay a tutor via Stripe transfer. Amount defaults to full owed balance. */
@@ -57,8 +110,18 @@ export async function payTutorViaStripeAction(_prev: ActionResult, formData: For
 
   const tutor = await prisma.user.findUnique({ where: { id: tutorId } });
   if (!tutor) return { error: "Tutor not found." };
-  if (!tutor.stripeAccountId || !tutor.stripeOnboarded) {
+  if (!tutor.stripeAccountId) {
     return { error: "This tutor hasn't connected their bank account via Stripe yet." };
+  }
+
+  const stripe = getStripe();
+
+  // Re-check capability status right before the transfer (per Stripe guidance —
+  // requirements can change after onboarding).
+  const ready = await isRecipientReady(stripe, tutor.stripeAccountId).catch(() => false);
+  if (!ready) {
+    await prisma.user.update({ where: { id: tutorId }, data: { stripeOnboarded: false } });
+    return { error: "This tutor's Stripe account isn't ready for transfers (onboarding incomplete or new requirements due)." };
   }
 
   const balance = await getTutorBalance(tutorId);
@@ -74,8 +137,6 @@ export async function payTutorViaStripeAction(_prev: ActionResult, formData: For
   if (amount.gt(balance.owed)) {
     return { error: `Amount exceeds owed balance (${balance.owed.toFixed(2)}).` };
   }
-
-  const stripe = getStripe();
 
   // Create the ledger row first so the payout is never untracked, then attach
   // the transfer. The idempotency key prevents double-transfers on retries.
@@ -111,4 +172,5 @@ export async function payTutorViaStripeAction(_prev: ActionResult, formData: For
   revalidatePath(`/admin/tutors/${tutorId}`);
   revalidatePath("/admin/tutors");
   revalidatePath("/admin");
+  return {};
 }
