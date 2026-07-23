@@ -1,17 +1,8 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getTutorOwedMap } from "@/lib/balances";
-import { formatUSD } from "@/lib/money";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { TutorsTable } from "./tutors-table";
 
 export default async function TutorsPage() {
   const [tutors, owedMap] = await Promise.all([
@@ -38,45 +29,16 @@ export default async function TutorsPage() {
             page.
           </p>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Payouts</TableHead>
-                <TableHead className="text-right">Owed</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {tutors.map((t) => (
-                <TableRow key={t.id} data-reveal>
-                  <TableCell>
-                    <Link href={`/admin/tutors/${t.id}`} className="font-medium underline-offset-2 hover:underline">
-                      {t.name}
-                    </Link>
-                    {!t.active && (
-                      <Badge variant="outline" className="ml-2">
-                        inactive
-                      </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">{t.email}</TableCell>
-                  <TableCell>
-                    {t.stripeOnboarded ? (
-                      <Badge className="bg-green-500/10 text-green-500" variant="outline">
-                        Stripe connected
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline">manual</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {formatUSD(owedMap.get(t.id) ?? 0)}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <TutorsTable
+            tutors={tutors.map((t) => ({
+              id: t.id,
+              name: t.name,
+              email: t.email,
+              active: t.active,
+              stripeOnboarded: t.stripeOnboarded,
+              owed: (owedMap.get(t.id) ?? 0).toString(),
+            }))}
+          />
         )}
       </CardContent>
     </Card>
