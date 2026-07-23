@@ -7,7 +7,7 @@ export function StatCards({
   stats: { label: string; value: string; accent?: "green" | "red" | "neutral" }[];
 }) {
   return (
-    <div className="grid gap-4 sm:grid-cols-3">
+    <div className={cn("grid gap-4", stats.length === 4 ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-3")}>
       {stats.map((s) => (
         <Card key={s.label}>
           <CardContent className="pt-4">

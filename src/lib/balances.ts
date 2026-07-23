@@ -8,46 +8,67 @@ export type TutorBalance = {
   earned: Prisma.Decimal;
   paid: Prisma.Decimal;
   owed: Prisma.Decimal;
+  /** Manager's cut across this tutor's classes: Σ fullCost − Σ earnings. */
+  margin: Prisma.Decimal;
 };
 
 export type ClientBalance = {
   billed: Prisma.Decimal;
   received: Prisma.Decimal;
   owed: Prisma.Decimal;
+  /** Manager's cut across this client's classes: Σ fullCost − Σ tutor earnings. */
+  margin: Prisma.Decimal;
 };
 
 /** All-time earned / paid / owed for one tutor. Voided classes are excluded. */
 export async function getTutorBalance(tutorId: string): Promise<TutorBalance> {
-  const [earnedAgg, paidAgg] = await Promise.all([
+  const [classAgg, paidAgg] = await Promise.all([
     prisma.classSession.aggregate({
       where: { tutorId, voided: false },
-      _sum: { tutorEarnings: true },
+      _sum: { tutorEarnings: true, fullCost: true },
     }),
     prisma.tutorPayment.aggregate({
       where: { tutorId, status: "PAID" },
       _sum: { amount: true },
     }),
   ]);
-  const earned = earnedAgg._sum.tutorEarnings ?? zero;
+  const earned = classAgg._sum.tutorEarnings ?? zero;
+  const billed = classAgg._sum.fullCost ?? zero;
   const paid = paidAgg._sum.amount ?? zero;
-  return { earned, paid, owed: earned.minus(paid) };
+  return { earned, paid, owed: earned.minus(paid), margin: billed.minus(earned) };
 }
 
 /** All-time billed / received / owed for one client. Voided classes are excluded. */
 export async function getClientBalance(clientId: string): Promise<ClientBalance> {
-  const [billedAgg, receivedAgg] = await Promise.all([
+  const [classAgg, receivedAgg] = await Promise.all([
     prisma.classSession.aggregate({
       where: { clientId, voided: false },
-      _sum: { fullCost: true },
+      _sum: { fullCost: true, tutorEarnings: true },
     }),
     prisma.clientPayment.aggregate({
       where: { clientId },
       _sum: { amount: true },
     }),
   ]);
-  const billed = billedAgg._sum.fullCost ?? zero;
+  const billed = classAgg._sum.fullCost ?? zero;
+  const earnings = classAgg._sum.tutorEarnings ?? zero;
   const received = receivedAgg._sum.amount ?? zero;
-  return { billed, received, owed: billed.minus(received) };
+  return { billed, received, owed: billed.minus(received), margin: billed.minus(earnings) };
+}
+
+/** Platform totals: what was billed, what tutors earned, and the manager's cut. */
+export async function getPlatformMargin(): Promise<{
+  billed: Prisma.Decimal;
+  tutorEarnings: Prisma.Decimal;
+  margin: Prisma.Decimal;
+}> {
+  const agg = await prisma.classSession.aggregate({
+    where: { voided: false },
+    _sum: { fullCost: true, tutorEarnings: true },
+  });
+  const billed = agg._sum.fullCost ?? zero;
+  const tutorEarnings = agg._sum.tutorEarnings ?? zero;
+  return { billed, tutorEarnings, margin: billed.minus(tutorEarnings) };
 }
 
 /** Owed amount per tutor id, for list views (grouped, two queries total). */

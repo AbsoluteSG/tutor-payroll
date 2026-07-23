@@ -78,7 +78,8 @@ model RateCard {
   tutorId         String
   /// Tutor's hourly rate for this client.
   tutorRate       Decimal  @db.Decimal(10, 2)
-  /// Optional default full (client-facing) cost, prefilled on submission.
+  /// Optional client-facing hourly rate; the submission form prefills
+  /// fullCost = this × duration (still editable, e.g. for flat-priced sessions).
   defaultFullCost Decimal? @db.Decimal(10, 2)
   createdAt       DateTime @default(now())
 

@@ -66,6 +66,7 @@ export default async function TutorProfilePage({ params }: { params: Promise<{ i
           { label: "All-time earnings", value: formatUSD(balance.earned) },
           { label: "Paid", value: formatUSD(balance.paid) },
           { label: "Owed", value: formatUSD(balance.owed), accent: balance.owed.gt(0) ? "red" : "neutral" },
+          { label: "Your cut", value: formatUSD(balance.margin), accent: "green" },
         ]}
       />
 
@@ -105,7 +106,7 @@ export default async function TutorProfilePage({ params }: { params: Promise<{ i
           <CardTitle className="text-base">Submission log</CardTitle>
         </CardHeader>
         <CardContent>
-          <ClassTable rows={classes} showClient adminLinks showVoidControls />
+          <ClassTable rows={classes} showClient adminLinks showVoidControls showMargin />
         </CardContent>
       </Card>
 

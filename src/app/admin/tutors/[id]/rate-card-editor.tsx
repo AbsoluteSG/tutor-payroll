@@ -48,7 +48,7 @@ export function RateCardEditor({
             <TableRow>
               <TableHead>Client</TableHead>
               <TableHead className="text-right">Tutor rate ($/h)</TableHead>
-              <TableHead className="text-right">Default full cost ($)</TableHead>
+              <TableHead className="text-right">Client rate ($/h)</TableHead>
               <TableHead />
             </TableRow>
           </TableHeader>
@@ -99,7 +99,7 @@ export function RateCardEditor({
           <Input name="tutorRate" inputMode="decimal" placeholder="30" required />
         </div>
         <div className="grid w-36 gap-1">
-          <span className="text-xs text-neutral-500">Default cost ($)</span>
+          <span className="text-xs text-neutral-500">Client rate ($/h)</span>
           <Input name="defaultFullCost" inputMode="decimal" placeholder="optional" />
         </div>
         <Button type="submit" size="sm" disabled={pending}>

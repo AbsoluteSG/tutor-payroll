@@ -26,11 +26,23 @@ function todayISO() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
+/** Default full cost = client hourly rate × duration, e.g. 80/h × 90min = "120". */
+function defaultCost(hourlyRate: string, durationMinutes: string): string {
+  const rate = parseFloat(hourlyRate);
+  const mins = parseInt(durationMinutes, 10);
+  if (!Number.isFinite(rate) || !Number.isFinite(mins) || mins <= 0) return "";
+  return String(Math.round((rate * mins * 100) / 60) / 100);
+}
+
 export function SubmitClassForm({ options }: { options: ClientOption[] }) {
   const [state, formAction, pending] = useActionState(submitClassAction, undefined);
   const [clientId, setClientId] = useState(options.length === 1 ? options[0].clientId : "");
   const [duration, setDuration] = useState("60");
-  const [fullCost, setFullCost] = useState(options.length === 1 ? options[0].defaultFullCost : "");
+  const [fullCost, setFullCost] = useState(
+    options.length === 1 ? defaultCost(options[0].defaultFullCost, "60") : "",
+  );
+  // Once the tutor edits the cost by hand, stop auto-filling it.
+  const [costTouched, setCostTouched] = useState(false);
 
   const selected = useMemo(() => options.find((o) => o.clientId === clientId), [options, clientId]);
 
@@ -54,7 +66,8 @@ export function SubmitClassForm({ options }: { options: ClientOption[] }) {
             if (!v) return;
             setClientId(v);
             const opt = options.find((o) => o.clientId === v);
-            if (opt?.defaultFullCost) setFullCost(opt.defaultFullCost);
+            setCostTouched(false);
+            if (opt?.defaultFullCost) setFullCost(defaultCost(opt.defaultFullCost, duration));
           }}
           required
         >
@@ -91,7 +104,12 @@ export function SubmitClassForm({ options }: { options: ClientOption[] }) {
             max={600}
             step={5}
             value={duration}
-            onChange={(e) => setDuration(e.target.value)}
+            onChange={(e) => {
+              setDuration(e.target.value);
+              if (!costTouched && selected?.defaultFullCost) {
+                setFullCost(defaultCost(selected.defaultFullCost, e.target.value));
+              }
+            }}
             required
           />
         </div>
@@ -99,14 +117,17 @@ export function SubmitClassForm({ options }: { options: ClientOption[] }) {
 
       <div className="grid grid-cols-2 gap-4">
         <div className="grid gap-2">
-          <Label htmlFor="fullCost">Full cost ($)</Label>
+          <Label htmlFor="fullCost">Full cost ($ total)</Label>
           <Input
             id="fullCost"
             name="fullCost"
             inputMode="decimal"
             placeholder="e.g. 60"
             value={fullCost}
-            onChange={(e) => setFullCost(e.target.value)}
+            onChange={(e) => {
+              setCostTouched(true);
+              setFullCost(e.target.value);
+            }}
             required
           />
         </div>

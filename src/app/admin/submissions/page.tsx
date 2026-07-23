@@ -21,7 +21,7 @@ export default async function SubmissionsPage() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <ClassTable rows={rows} showTutor showClient adminLinks showVoidControls />
+        <ClassTable rows={rows} showTutor showClient adminLinks showVoidControls showMargin />
       </CardContent>
     </Card>
   );

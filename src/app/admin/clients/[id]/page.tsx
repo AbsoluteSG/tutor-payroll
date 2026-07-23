@@ -46,6 +46,7 @@ export default async function ClientProfilePage({ params }: { params: Promise<{ 
           { label: "All-time billed", value: formatUSD(balance.billed) },
           { label: "Received", value: formatUSD(balance.received) },
           { label: "Owes", value: formatUSD(balance.owed), accent: balance.owed.gt(0) ? "green" : "neutral" },
+          { label: "Your cut", value: formatUSD(balance.margin), accent: "green" },
         ]}
       />
 
@@ -67,7 +68,7 @@ export default async function ClientProfilePage({ params }: { params: Promise<{ 
           <CardDescription>All classes across tutors and students for this client.</CardDescription>
         </CardHeader>
         <CardContent>
-          <ClassTable rows={classes} showTutor adminLinks showVoidControls />
+          <ClassTable rows={classes} showTutor adminLinks showVoidControls showMargin />
         </CardContent>
       </Card>
 

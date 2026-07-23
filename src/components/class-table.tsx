@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { formatUSD, formatDuration } from "@/lib/money";
+import { Prisma } from "@/generated/prisma/client";
 import { setClassVoidedAction } from "@/lib/actions/admin-actions";
 import { Button } from "@/components/ui/button";
 
@@ -32,6 +33,7 @@ export function ClassTable({
   showClient = false,
   adminLinks = false,
   showVoidControls = false,
+  showMargin = false,
   emptyMessage = "No classes yet.",
 }: {
   rows: ClassRow[];
@@ -41,6 +43,8 @@ export function ClassTable({
   adminLinks?: boolean;
   /** Show the manager's void/restore button column. */
   showVoidControls?: boolean;
+  /** Show the manager's cut (full cost − tutor earnings). Admin views only. */
+  showMargin?: boolean;
   emptyMessage?: string;
 }) {
   if (rows.length === 0) {
@@ -59,6 +63,7 @@ export function ClassTable({
           <TableHead className="text-right">Full cost</TableHead>
           <TableHead className="text-right">Rate</TableHead>
           <TableHead className="text-right">Earnings</TableHead>
+          {showMargin && <TableHead className="text-right">Your cut</TableHead>}
           {showVoidControls && <TableHead />}
         </TableRow>
       </TableHeader>
@@ -100,6 +105,11 @@ export function ClassTable({
             <TableCell className="text-right tabular-nums">{formatUSD(String(row.fullCost))}</TableCell>
             <TableCell className="text-right tabular-nums">{formatUSD(String(row.tutorRate))}/h</TableCell>
             <TableCell className="text-right tabular-nums">{formatUSD(String(row.tutorEarnings))}</TableCell>
+            {showMargin && (
+              <TableCell className="text-right tabular-nums text-neutral-500">
+                {formatUSD(new Prisma.Decimal(String(row.fullCost)).minus(String(row.tutorEarnings)))}
+              </TableCell>
+            )}
             {showVoidControls && (
               <TableCell className="text-right">
                 <form action={setClassVoidedAction}>
