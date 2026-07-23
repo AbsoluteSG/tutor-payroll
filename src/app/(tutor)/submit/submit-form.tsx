@@ -21,6 +21,15 @@ type ClientOption = {
   defaultFullCost: string;
 };
 
+/** Prefill from a scheduled class the tutor is logging. */
+type InitialValues = {
+  scheduledId: string;
+  clientId: string;
+  studentName: string;
+  date: string;
+  durationMinutes: string;
+};
+
 function todayISO() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -34,13 +43,16 @@ function defaultCost(hourlyRate: string, durationMinutes: string): string {
   return String(Math.round((rate * mins * 100) / 60) / 100);
 }
 
-export function SubmitClassForm({ options }: { options: ClientOption[] }) {
+export function SubmitClassForm({ options, initial }: { options: ClientOption[]; initial?: InitialValues }) {
   const [state, formAction, pending] = useActionState(submitClassAction, undefined);
-  const [clientId, setClientId] = useState(options.length === 1 ? options[0].clientId : "");
-  const [duration, setDuration] = useState("60");
-  const [fullCost, setFullCost] = useState(
-    options.length === 1 ? defaultCost(options[0].defaultFullCost, "60") : "",
-  );
+  const initialClientId = initial?.clientId ?? (options.length === 1 ? options[0].clientId : "");
+  const initialDuration = initial?.durationMinutes ?? "60";
+  const [clientId, setClientId] = useState(initialClientId);
+  const [duration, setDuration] = useState(initialDuration);
+  const [fullCost, setFullCost] = useState(() => {
+    const opt = options.find((o) => o.clientId === initialClientId);
+    return opt ? defaultCost(opt.defaultFullCost, initialDuration) : "";
+  });
   // Once the tutor edits the cost by hand, stop auto-filling it.
   const [costTouched, setCostTouched] = useState(false);
 
@@ -56,6 +68,7 @@ export function SubmitClassForm({ options }: { options: ClientOption[] }) {
 
   return (
     <form action={formAction} className="grid gap-4">
+      {initial?.scheduledId && <input type="hidden" name="scheduledId" value={initial.scheduledId} />}
       <div className="grid gap-2">
         <Label>Client</Label>
         <Select
@@ -86,13 +99,19 @@ export function SubmitClassForm({ options }: { options: ClientOption[] }) {
 
       <div className="grid gap-2">
         <Label htmlFor="studentName">Student name</Label>
-        <Input id="studentName" name="studentName" placeholder="e.g. Emma Smith" required />
+        <Input
+          id="studentName"
+          name="studentName"
+          placeholder="e.g. Emma Smith"
+          defaultValue={initial?.studentName}
+          required
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="grid gap-2">
           <Label htmlFor="date">Date</Label>
-          <Input id="date" name="date" type="date" defaultValue={todayISO()} required />
+          <Input id="date" name="date" type="date" defaultValue={initial?.date ?? todayISO()} required />
         </div>
         <div className="grid gap-2">
           <Label htmlFor="durationMinutes">Duration (minutes)</Label>

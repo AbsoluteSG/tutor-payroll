@@ -78,3 +78,25 @@ export const acceptInviteSchema = z.object({
   password: z.string().min(8, "Password must be at least 8 characters").max(200),
   username: usernameSchema.optional(),
 });
+
+/** A user editing their own profile. Blank username clears it; blank newPassword keeps the current one. */
+export const profileSchema = z.object({
+  name: z.string().trim().min(1, "Name is required").max(120),
+  email: z.string().trim().toLowerCase().email("Invalid email"),
+  username: usernameSchema.optional().or(z.literal("")),
+  currentPassword: z.string().min(1, "Enter your current password to save changes"),
+  newPassword: z.string().min(8, "New password must be at least 8 characters").max(200).optional().or(z.literal("")),
+});
+
+export const scheduleClassSchema = z.object({
+  tutorId: z.string().min(1, "Pick a tutor"),
+  clientId: z.string().min(1, "Pick a client"),
+  studentName: z.string().trim().min(1, "Student name is required").max(120),
+  // From a datetime-local input, e.g. "2026-08-01T14:30".
+  scheduledAt: z
+    .string()
+    .min(1, "Pick a date and time")
+    .refine((v) => !Number.isNaN(Date.parse(v)), "Invalid date/time"),
+  durationMinutes: z.coerce.number().int().min(5, "Too short").max(600, "Too long"),
+  notes: z.string().trim().max(500).optional(),
+});

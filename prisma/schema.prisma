@@ -37,6 +37,12 @@ enum PaymentRequestStatus {
   CANCELED
 }
 
+enum ScheduledClassStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELED
+}
+
 model User {
   id              String   @id @default(cuid())
   email           String   @unique
@@ -50,9 +56,10 @@ model User {
   active          Boolean  @default(true)
   createdAt       DateTime @default(now())
 
-  rateCards     RateCard[]
-  classSessions ClassSession[]
-  payments      TutorPayment[]
+  rateCards       RateCard[]
+  classSessions   ClassSession[]
+  payments        TutorPayment[]
+  scheduledClasses ScheduledClass[]
 }
 
 model InviteToken {
@@ -74,10 +81,11 @@ model Client {
   active      Boolean  @default(true)
   createdAt   DateTime @default(now())
 
-  rateCards       RateCard[]
-  classSessions   ClassSession[]
-  payments        ClientPayment[]
-  paymentRequests PaymentRequest[]
+  rateCards        RateCard[]
+  classSessions    ClassSession[]
+  payments         ClientPayment[]
+  paymentRequests  PaymentRequest[]
+  scheduledClasses ScheduledClass[]
 }
 
 /// Preset rate for a tutor↔client pair. Also controls which clients a
@@ -158,6 +166,27 @@ model ClientPayment {
   client Client @relation(fields: [clientId], references: [id])
 
   @@index([clientId])
+}
+
+/// A class the manager has scheduled for a tutor↔client pair. Purely a plan —
+/// the tutor logs it (via /submit) to actually accrue earnings, which flips
+/// this to COMPLETED.
+model ScheduledClass {
+  id              String               @id @default(cuid())
+  tutorId         String
+  clientId        String
+  studentName     String
+  scheduledAt     DateTime
+  durationMinutes Int
+  notes           String?
+  status          ScheduledClassStatus @default(SCHEDULED)
+  createdAt       DateTime             @default(now())
+
+  tutor  User   @relation(fields: [tutorId], references: [id])
+  client Client @relation(fields: [clientId], references: [id])
+
+  @@index([tutorId, scheduledAt])
+  @@index([clientId, scheduledAt])
 }
 
 /// A shareable "pay me" link for a client. The id doubles as the public

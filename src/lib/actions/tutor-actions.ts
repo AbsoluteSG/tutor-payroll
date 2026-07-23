@@ -34,18 +34,31 @@ export async function submitClassAction(_prev: ActionResult, formData: FormData)
     return { error: "You are not assigned to this client. Ask your manager." };
   }
 
-  await prisma.classSession.create({
-    data: {
-      tutorId: user.id,
-      clientId: data.clientId,
-      studentName: data.studentName,
-      date: new Date(data.date),
-      durationMinutes: data.durationMinutes,
-      fullCost: new Prisma.Decimal(data.fullCost),
-      tutorRate: rateCard.tutorRate,
-      tutorEarnings: computeEarnings(rateCard.tutorRate, data.durationMinutes),
-      notes: data.notes,
-    },
+  // If this submission came from an upcoming scheduled class, mark it done in
+  // the same transaction so it drops off the tutor's dashboard.
+  const scheduledId = String(formData.get("scheduledId") ?? "").trim();
+
+  await prisma.$transaction(async (tx) => {
+    await tx.classSession.create({
+      data: {
+        tutorId: user.id,
+        clientId: data.clientId,
+        studentName: data.studentName,
+        date: new Date(data.date),
+        durationMinutes: data.durationMinutes,
+        fullCost: new Prisma.Decimal(data.fullCost),
+        tutorRate: rateCard.tutorRate,
+        tutorEarnings: computeEarnings(rateCard.tutorRate, data.durationMinutes),
+        notes: data.notes,
+      },
+    });
+
+    if (scheduledId) {
+      await tx.scheduledClass.updateMany({
+        where: { id: scheduledId, tutorId: user.id, status: "SCHEDULED" },
+        data: { status: "COMPLETED" },
+      });
+    }
   });
 
   revalidatePath("/dashboard");

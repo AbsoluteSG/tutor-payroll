@@ -1,5 +1,59 @@
 import { describe, expect, it } from "vitest";
-import { moneyString, classSubmissionSchema, usernameSchema } from "./schemas";
+import {
+  moneyString,
+  classSubmissionSchema,
+  usernameSchema,
+  profileSchema,
+  scheduleClassSchema,
+} from "./schemas";
+
+describe("profileSchema", () => {
+  const base = {
+    name: "Taylor",
+    email: "Taylor@Example.com",
+    username: "taylor",
+    currentPassword: "secret123",
+    newPassword: "",
+  };
+
+  it("accepts a valid profile and lowercases email", () => {
+    const parsed = profileSchema.parse(base);
+    expect(parsed.email).toBe("taylor@example.com");
+  });
+
+  it("allows blank username and blank new password", () => {
+    expect(profileSchema.safeParse({ ...base, username: "", newPassword: "" }).success).toBe(true);
+  });
+
+  it("requires the current password", () => {
+    expect(profileSchema.safeParse({ ...base, currentPassword: "" }).success).toBe(false);
+  });
+
+  it("rejects a too-short new password but allows a valid one", () => {
+    expect(profileSchema.safeParse({ ...base, newPassword: "short" }).success).toBe(false);
+    expect(profileSchema.safeParse({ ...base, newPassword: "longenough1" }).success).toBe(true);
+  });
+});
+
+describe("scheduleClassSchema", () => {
+  const base = {
+    tutorId: "t1",
+    clientId: "c1",
+    studentName: "Emma",
+    scheduledAt: "2026-08-01T14:30",
+    durationMinutes: "60",
+  };
+
+  it("accepts a valid schedule and coerces duration", () => {
+    expect(scheduleClassSchema.parse(base).durationMinutes).toBe(60);
+  });
+
+  it("rejects a missing tutor, bad datetime, or out-of-range duration", () => {
+    expect(scheduleClassSchema.safeParse({ ...base, tutorId: "" }).success).toBe(false);
+    expect(scheduleClassSchema.safeParse({ ...base, scheduledAt: "not-a-date" }).success).toBe(false);
+    expect(scheduleClassSchema.safeParse({ ...base, durationMinutes: "3" }).success).toBe(false);
+  });
+});
 
 describe("usernameSchema", () => {
   it("accepts valid usernames and lowercases them", () => {

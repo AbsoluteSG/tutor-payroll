@@ -150,3 +150,22 @@
     }
   }
 }
+
+/* iPhone-style "edit mode" jiggle for reorderable dashboard widgets. Applied
+   to an inner wrapper so it never conflicts with dnd-kit's drag transform. */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes jiggle {
+    0% {
+      transform: rotate(-0.5deg);
+    }
+    50% {
+      transform: rotate(0.5deg);
+    }
+    100% {
+      transform: rotate(-0.5deg);
+    }
+  }
+  .animate-jiggle {
+    animation: jiggle 0.28s ease-in-out infinite;
+  }
+}
