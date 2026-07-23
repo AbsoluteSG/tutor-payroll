@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { logoutAction } from "@/lib/actions/auth-actions";
 import { Button } from "@/components/ui/button";
+import { NavTabs } from "@/components/nav-tabs";
 
 export function AppHeader({
   name,
@@ -10,26 +11,30 @@ export function AppHeader({
   links: { href: string; label: string }[];
 }) {
   return (
-    <header className="border-b bg-white">
-      <div className="mx-auto flex max-w-5xl items-center gap-6 px-4 py-3">
-        <Link href="/" className="font-semibold">
-          Tutor Payroll
-        </Link>
-        <nav className="flex gap-4 text-sm text-neutral-600">
-          {links.map((l) => (
-            <Link key={l.href} href={l.href} className="hover:text-neutral-900">
-              {l.label}
-            </Link>
-          ))}
-        </nav>
-        <div className="ml-auto flex items-center gap-3 text-sm">
-          <span className="text-neutral-500">{name}</span>
-          <form action={logoutAction}>
-            <Button variant="outline" size="sm" type="submit">
-              Sign out
-            </Button>
-          </form>
+    <header className="border-b bg-background">
+      <div className="mx-auto w-full max-w-5xl px-4">
+        <div className="flex items-center gap-3 pt-3">
+          <Link href="/" className="flex items-center gap-2">
+            {/* Geist-style triangle mark */}
+            <svg
+              aria-hidden
+              viewBox="0 0 16 16"
+              className="size-5 fill-foreground"
+            >
+              <path d="M8 1.5 15.5 14H.5L8 1.5Z" />
+            </svg>
+            <span className="text-sm font-semibold tracking-tight">Tutor Payroll</span>
+          </Link>
+          <div className="ml-auto flex items-center gap-3">
+            <span className="text-sm text-muted-foreground">{name}</span>
+            <form action={logoutAction}>
+              <Button variant="outline" size="sm" type="submit">
+                Sign out
+              </Button>
+            </form>
+          </div>
         </div>
+        <NavTabs links={links} />
       </div>
     </header>
   );

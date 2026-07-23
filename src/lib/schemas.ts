@@ -19,6 +19,20 @@ export const classSubmissionSchema = z.object({
   notes: z.string().trim().max(500).optional(),
 });
 
+/** Manager editing a submitted class — rate is editable here (unlike tutor submission). */
+export const classEditSchema = z.object({
+  id: z.string().min(1),
+  studentName: z.string().trim().min(1, "Student name is required").max(120),
+  date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date")
+    .refine((v) => !Number.isNaN(Date.parse(v)), "Invalid date"),
+  durationMinutes: z.coerce.number().int().min(5, "Too short").max(600, "Too long"),
+  fullCost: moneyString,
+  tutorRate: moneyString,
+  notes: z.string().trim().max(500).optional(),
+});
+
 export const clientSchema = z.object({
   paymentName: z.string().trim().min(1, "Payment name is required").max(120),
   displayName: z.string().trim().max(120).optional(),

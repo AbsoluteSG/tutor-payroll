@@ -68,7 +68,7 @@ export default async function ClientProfilePage({ params }: { params: Promise<{ 
           <CardDescription>All classes across tutors and students for this client.</CardDescription>
         </CardHeader>
         <CardContent>
-          <ClassTable rows={classes} showTutor adminLinks showVoidControls showMargin />
+          <ClassTable rows={classes} showTutor adminLinks showActions showMargin />
         </CardContent>
       </Card>
 

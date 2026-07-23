@@ -10,8 +10,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { formatUSD, formatDuration } from "@/lib/money";
 import { Prisma } from "@/generated/prisma/client";
-import { setClassVoidedAction } from "@/lib/actions/admin-actions";
-import { Button } from "@/components/ui/button";
+import { ClassRowActions } from "@/components/class-row-actions";
 
 export type ClassRow = {
   id: string;
@@ -32,7 +31,7 @@ export function ClassTable({
   showTutor = false,
   showClient = false,
   adminLinks = false,
-  showVoidControls = false,
+  showActions = false,
   showMargin = false,
   emptyMessage = "No classes yet.",
 }: {
@@ -41,8 +40,8 @@ export function ClassTable({
   showClient?: boolean;
   /** Link tutor/client names to their admin profiles. */
   adminLinks?: boolean;
-  /** Show the manager's void/restore button column. */
-  showVoidControls?: boolean;
+  /** Show the manager's edit/void/delete menu column. */
+  showActions?: boolean;
   /** Show the manager's cut (full cost − tutor earnings). Admin views only. */
   showMargin?: boolean;
   emptyMessage?: string;
@@ -64,7 +63,7 @@ export function ClassTable({
           <TableHead className="text-right">Rate</TableHead>
           <TableHead className="text-right">Earnings</TableHead>
           {showMargin && <TableHead className="text-right">Your cut</TableHead>}
-          {showVoidControls && <TableHead />}
+          {showActions && <TableHead />}
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -110,15 +109,20 @@ export function ClassTable({
                 {formatUSD(new Prisma.Decimal(String(row.fullCost)).minus(String(row.tutorEarnings)))}
               </TableCell>
             )}
-            {showVoidControls && (
+            {showActions && (
               <TableCell className="text-right">
-                <form action={setClassVoidedAction}>
-                  <input type="hidden" name="id" value={row.id} />
-                  <input type="hidden" name="voided" value={String(!row.voided)} />
-                  <Button variant="ghost" size="sm" type="submit">
-                    {row.voided ? "Restore" : "Void"}
-                  </Button>
-                </form>
+                <ClassRowActions
+                  row={{
+                    id: row.id,
+                    studentName: row.studentName,
+                    dateISO: row.date.toISOString().slice(0, 10),
+                    durationMinutes: row.durationMinutes,
+                    fullCost: String(row.fullCost),
+                    tutorRate: String(row.tutorRate),
+                    notes: row.notes ?? "",
+                    voided: row.voided,
+                  }}
+                />
               </TableCell>
             )}
           </TableRow>

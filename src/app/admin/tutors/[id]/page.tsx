@@ -106,7 +106,7 @@ export default async function TutorProfilePage({ params }: { params: Promise<{ i
           <CardTitle className="text-base">Submission log</CardTitle>
         </CardHeader>
         <CardContent>
-          <ClassTable rows={classes} showClient adminLinks showVoidControls showMargin />
+          <ClassTable rows={classes} showClient adminLinks showActions showMargin />
         </CardContent>
       </Card>
 

@@ -6,11 +6,13 @@ import { requireManager } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
   clientSchema,
+  classEditSchema,
   rateCardSchema,
   clientPaymentSchema,
   manualTutorPaymentSchema,
   inviteSchema,
 } from "@/lib/schemas";
+import { computeEarnings } from "@/lib/money";
 import { Prisma } from "@/generated/prisma/client";
 import type { ActionResult } from "@/lib/actions/auth-actions";
 
@@ -142,13 +144,65 @@ export async function recordManualTutorPaymentAction(_prev: ActionResult, formDa
 
 // ---------- Class sessions ----------
 
+/** Every page whose numbers a class-session change can affect. */
+function revalidateClassPaths(tutorId: string, clientId: string) {
+  for (const path of [
+    "/admin",
+    "/admin/submissions",
+    "/admin/tutors",
+    "/admin/clients",
+    `/admin/tutors/${tutorId}`,
+    `/admin/clients/${clientId}`,
+    "/dashboard",
+    "/history",
+  ]) {
+    revalidatePath(path);
+  }
+}
+
 export async function setClassVoidedAction(formData: FormData): Promise<void> {
   await requireManager();
   const id = String(formData.get("id") ?? "");
   const voided = formData.get("voided") === "true";
-  await prisma.classSession.update({ where: { id }, data: { voided } });
-  revalidatePath("/admin/submissions");
-  revalidatePath("/admin");
+  const row = await prisma.classSession.update({ where: { id }, data: { voided } });
+  revalidateClassPaths(row.tutorId, row.clientId);
+}
+
+export async function updateClassAction(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
+  await requireManager();
+  const parsed = classEditSchema.safeParse({
+    id: formData.get("id"),
+    studentName: formData.get("studentName"),
+    date: formData.get("date"),
+    durationMinutes: formData.get("durationMinutes"),
+    fullCost: formData.get("fullCost"),
+    tutorRate: formData.get("tutorRate"),
+    notes: formData.get("notes") || undefined,
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const { id, studentName, date, durationMinutes, fullCost, tutorRate, notes } = parsed.data;
+
+  const row = await prisma.classSession.update({
+    where: { id },
+    data: {
+      studentName,
+      date: new Date(date),
+      durationMinutes,
+      fullCost: new D(fullCost),
+      tutorRate: new D(tutorRate),
+      tutorEarnings: computeEarnings(tutorRate, durationMinutes),
+      notes: notes ?? null,
+    },
+  });
+  revalidateClassPaths(row.tutorId, row.clientId);
+  return {};
+}
+
+export async function deleteClassAction(formData: FormData): Promise<void> {
+  await requireManager();
+  const id = String(formData.get("id") ?? "");
+  const row = await prisma.classSession.delete({ where: { id } });
+  revalidateClassPaths(row.tutorId, row.clientId);
 }
 
 // ---------- Invites ----------
