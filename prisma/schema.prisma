@@ -1,0 +1,146 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  MANAGER
+  TUTOR
+}
+
+enum TutorPaymentMethod {
+  STRIPE
+  MANUAL
+}
+
+enum TutorPaymentStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+enum ClientPaymentMethod {
+  ZELLE
+  CASH
+  CHECK
+  OTHER
+}
+
+model User {
+  id              String   @id @default(cuid())
+  email           String   @unique
+  passwordHash    String
+  name            String
+  role            Role     @default(TUTOR)
+  stripeAccountId String?  @unique
+  stripeOnboarded Boolean  @default(false)
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+
+  rateCards     RateCard[]
+  classSessions ClassSession[]
+  payments      TutorPayment[]
+}
+
+model InviteToken {
+  token     String    @id @default(cuid())
+  email     String
+  name      String
+  role      Role      @default(TUTOR)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+}
+
+model Client {
+  id          String   @id @default(cuid())
+  /// Payment name is the key — e.g. the name on incoming Zelle payments.
+  paymentName String   @unique
+  displayName String?
+  notes       String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  rateCards     RateCard[]
+  classSessions ClassSession[]
+  payments      ClientPayment[]
+}
+
+/// Preset rate for a tutor↔client pair. Also controls which clients a
+/// tutor can select when submitting a class.
+model RateCard {
+  id              String   @id @default(cuid())
+  clientId        String
+  tutorId         String
+  /// Tutor's hourly rate for this client.
+  tutorRate       Decimal  @db.Decimal(10, 2)
+  /// Optional default full (client-facing) cost, prefilled on submission.
+  defaultFullCost Decimal? @db.Decimal(10, 2)
+  createdAt       DateTime @default(now())
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  tutor  User   @relation(fields: [tutorId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, tutorId])
+}
+
+model ClassSession {
+  id              String   @id @default(cuid())
+  tutorId         String
+  clientId        String
+  /// Specific student taught (multiple students can belong to one paying client).
+  studentName     String
+  date            DateTime @db.Date
+  durationMinutes Int
+  /// Total amount billed to the client for this class.
+  fullCost        Decimal  @db.Decimal(10, 2)
+  /// Hourly rate snapshot copied from the RateCard at submission time.
+  tutorRate       Decimal  @db.Decimal(10, 2)
+  /// rate × hours, computed and stored at submission time.
+  tutorEarnings   Decimal  @db.Decimal(10, 2)
+  notes           String?
+  voided          Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  tutor  User   @relation(fields: [tutorId], references: [id])
+  client Client @relation(fields: [clientId], references: [id])
+
+  @@index([tutorId, date])
+  @@index([clientId, date])
+}
+
+/// Money paid out to a tutor (Stripe transfer or recorded manual payment).
+model TutorPayment {
+  id               String             @id @default(cuid())
+  tutorId          String
+  amount           Decimal            @db.Decimal(10, 2)
+  method           TutorPaymentMethod
+  stripeTransferId String?            @unique
+  status           TutorPaymentStatus @default(PENDING)
+  note             String?
+  paidAt           DateTime           @default(now())
+  createdAt        DateTime           @default(now())
+
+  tutor User @relation(fields: [tutorId], references: [id])
+
+  @@index([tutorId])
+}
+
+/// Money received from a client (recorded manually, e.g. a Zelle payment).
+model ClientPayment {
+  id         String              @id @default(cuid())
+  clientId   String
+  amount     Decimal             @db.Decimal(10, 2)
+  method     ClientPaymentMethod @default(ZELLE)
+  note       String?
+  receivedAt DateTime            @default(now())
+  createdAt  DateTime            @default(now())
+
+  client Client @relation(fields: [clientId], references: [id])
+
+  @@index([clientId])
+}

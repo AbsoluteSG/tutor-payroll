@@ -1,36 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Tutor Payroll
 
-## Getting Started
+A small bookkeeping web app that replaces a shared timesheet spreadsheet.
 
-First, run the development server:
+- **Tutors** log in, submit classes (client, student, date, duration, full cost — their preset rate fills in automatically), and watch their balance (earned / paid / owed).
+- **The manager** creates clients (keyed by *payment name*, e.g. the name on incoming Zelle payments), assigns per-client rates to each tutor, records incoming client payments, voids mistaken submissions, and pays tutors — either by recording a manual payout or with one click via **Stripe Connect**.
+
+Works in any browser (Mac, Windows, phones).
+
+## Stack
+
+Next.js 16 (App Router) · TypeScript · Prisma 7 + PostgreSQL · Auth.js v5 (credentials + invite links) · Tailwind + shadcn/ui · Stripe Connect (Express accounts + Transfers)
+
+## Local development
 
 ```bash
+npm install
+cp .env.example .env        # fill in DATABASE_URL and AUTH_SECRET
+npx prisma migrate dev      # create tables
+SEED_SAMPLE_DATA=1 npm run seed   # manager + demo data
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Seed accounts (dev): manager `siphongames.dev@gmail.com` / `admin1234`, tutor `tutor@example.com` / `tutor1234`.
+Set `SEED_MANAGER_PASSWORD` before seeding production.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Tests & checks: `npm test` · `npm run typecheck` · `npm run lint`
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## How money flows
 
-## Learn More
+- Submitting a class **snapshots** the rate-card rate and stores `tutorEarnings = rate × hours`; changing a rate later never rewrites history.
+- Balances are always computed from the ledger: tutor `owed = Σ earnings − Σ paid payouts`; client `owes = Σ full cost − Σ recorded payments`. Voided classes drop out of every sum but stay visible.
+- Client payments (Zelle etc.) are recorded manually on the client's profile.
 
-To learn more about Next.js, take a look at the following resources:
+## Stripe Connect setup (payouts)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Create a Stripe account, enable **Connect** with **Express** accounts.
+2. Put the test-mode secret key in `STRIPE_SECRET_KEY`.
+3. Webhook: locally run
+   `stripe listen --forward-to localhost:3000/api/webhooks/stripe`
+   and copy the printed secret into `STRIPE_WEBHOOK_SECRET`. In production, add a webhook endpoint for `account.updated` and `transfer.reversed` pointing at `https://<your-domain>/api/webhooks/stripe`.
+4. Each tutor visits **Payouts → Connect bank account** and completes Stripe's hosted onboarding.
+5. On a tutor's admin profile, **Pay $X** transfers from your platform Stripe balance to the tutor. **Your Stripe balance must be funded** (Stripe supports ACH top-ups) because client money arrives outside Stripe.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Tutors who skip onboarding can still be paid outside the app and tracked with **Record manual payment**.
 
-## Deploy on Vercel
+## Deployment
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Either of:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Railway**: create a project with a Postgres plugin + this repo. Set the env vars from `.env.example`. Build runs `next build`; run `npx prisma migrate deploy` as a release step.
+- **Vercel + Neon**: import the repo into Vercel, add a Neon Postgres database, set env vars, and run `npx prisma migrate deploy` against the Neon URL.
+
+Then seed the manager account: `SEED_MANAGER_PASSWORD=<strong password> npm run seed` (omit `SEED_SAMPLE_DATA`).
