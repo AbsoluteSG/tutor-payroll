@@ -14,13 +14,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { RecordPaymentForm } from "./record-payment-form";
+import { PaymentLinks } from "./payment-links";
 
 export default async function ClientProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const client = await prisma.client.findUnique({ where: { id } });
   if (!client) notFound();
 
-  const [balance, classes, payments] = await Promise.all([
+  const [balance, classes, payments, paymentRequests] = await Promise.all([
     getClientBalance(id),
     prisma.classSession.findMany({
       where: { clientId: id },
@@ -31,6 +32,7 @@ export default async function ClientProfilePage({ params }: { params: Promise<{ 
       },
     }),
     prisma.clientPayment.findMany({ where: { clientId: id }, orderBy: { receivedAt: "desc" } }),
+    prisma.paymentRequest.findMany({ where: { clientId: id }, orderBy: { createdAt: "desc" } }),
   ]);
 
   return (
@@ -49,6 +51,32 @@ export default async function ClientProfilePage({ params }: { params: Promise<{ 
           { label: "Your cut", value: formatUSD(balance.margin), accent: "green" },
         ]}
       />
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Payment links</CardTitle>
+          <CardDescription>
+            Send the client a link to pay by card or bank transfer — the payment records itself.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <PaymentLinks
+            clientId={client.id}
+            owed={balance.owed.toFixed(2)}
+            appUrl={process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}
+            requests={paymentRequests.map((r) => ({
+              id: r.id,
+              amount: r.amount.toFixed(2),
+              note: r.note ?? "",
+              status: r.status,
+              createdAt: r.createdAt.toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+              }),
+            }))}
+          />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

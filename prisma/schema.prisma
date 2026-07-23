@@ -27,7 +27,14 @@ enum ClientPaymentMethod {
   ZELLE
   CASH
   CHECK
+  STRIPE
   OTHER
+}
+
+enum PaymentRequestStatus {
+  PENDING
+  PAID
+  CANCELED
 }
 
 model User {
@@ -67,9 +74,10 @@ model Client {
   active      Boolean  @default(true)
   createdAt   DateTime @default(now())
 
-  rateCards     RateCard[]
-  classSessions ClassSession[]
-  payments      ClientPayment[]
+  rateCards       RateCard[]
+  classSessions   ClassSession[]
+  payments        ClientPayment[]
+  paymentRequests PaymentRequest[]
 }
 
 /// Preset rate for a tutor↔client pair. Also controls which clients a
@@ -133,15 +141,37 @@ model TutorPayment {
   @@index([tutorId])
 }
 
-/// Money received from a client (recorded manually, e.g. a Zelle payment).
+/// Money received from a client (recorded manually, e.g. a Zelle payment,
+/// or automatically when a Stripe payment link is paid).
 model ClientPayment {
-  id         String              @id @default(cuid())
-  clientId   String
-  amount     Decimal             @db.Decimal(10, 2)
-  method     ClientPaymentMethod @default(ZELLE)
-  note       String?
-  receivedAt DateTime            @default(now())
-  createdAt  DateTime            @default(now())
+  id              String              @id @default(cuid())
+  clientId        String
+  amount          Decimal             @db.Decimal(10, 2)
+  method          ClientPaymentMethod @default(ZELLE)
+  /// Checkout session that produced this payment — unique so webhook
+  /// retries and manual syncs can never double-record.
+  stripeSessionId String?             @unique
+  note            String?
+  receivedAt      DateTime            @default(now())
+  createdAt       DateTime            @default(now())
+
+  client Client @relation(fields: [clientId], references: [id])
+
+  @@index([clientId])
+}
+
+/// A shareable "pay me" link for a client. The id doubles as the public
+/// /pay/[id] slug; opening it mints a fresh Stripe Checkout session.
+model PaymentRequest {
+  id              String               @id @default(cuid())
+  clientId        String
+  amount          Decimal              @db.Decimal(10, 2)
+  note            String?
+  status          PaymentRequestStatus @default(PENDING)
+  /// Most recent Checkout session created for this request.
+  stripeSessionId String?
+  paidAt          DateTime?
+  createdAt       DateTime             @default(now())
 
   client Client @relation(fields: [clientId], references: [id])
 
