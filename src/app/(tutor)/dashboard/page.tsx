@@ -40,7 +40,7 @@ export default async function TutorDashboard() {
       <Card>
         <CardHeader className="flex-row items-center justify-between">
           <CardTitle className="text-base">Recent classes</CardTitle>
-          <Link href="/history" className="text-sm text-neutral-500 hover:underline">
+          <Link href="/history" className="text-sm text-muted-foreground hover:underline">
             View all
           </Link>
         </CardHeader>

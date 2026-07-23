@@ -16,7 +16,7 @@ export function AcceptInviteForm({ token }: { token: string }) {
         <Label htmlFor="password">Choose a password</Label>
         <Input id="password" name="password" type="password" autoComplete="new-password" minLength={8} required />
       </div>
-      {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
+      {state?.error && <p className="text-sm text-red-400">{state.error}</p>}
       <Button type="submit" disabled={pending}>
         {pending ? "Creating account…" : "Create account"}
       </Button>

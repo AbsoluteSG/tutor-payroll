@@ -50,7 +50,7 @@ export function PaymentSection({
                 disabled={!stripeReady || nothingOwed}
               />
             </div>
-            {stripeState?.error && <p className="text-sm text-red-600">{stripeState.error}</p>}
+            {stripeState?.error && <p className="text-sm text-red-400">{stripeState.error}</p>}
             <Button type="submit" disabled={!stripeReady || nothingOwed || stripePending}>
               {stripePending ? "Paying…" : nothingOwed ? "Nothing owed" : `Pay $${owed}`}
             </Button>
@@ -80,7 +80,7 @@ export function PaymentSection({
               <Label htmlFor="manual-note">Note (optional)</Label>
               <Input id="manual-note" name="note" placeholder="e.g. Zelle 7/23" />
             </div>
-            {manualState?.error && <p className="text-sm text-red-600">{manualState.error}</p>}
+            {manualState?.error && <p className="text-sm text-red-400">{manualState.error}</p>}
             <Button type="submit" variant="outline" disabled={manualPending}>
               {manualPending ? "Recording…" : "Record payment"}
             </Button>

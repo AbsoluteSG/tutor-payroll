@@ -38,7 +38,7 @@ export default async function InvitesPage() {
         </CardHeader>
         <CardContent>
           {invites.length === 0 ? (
-            <p className="py-8 text-center text-sm text-neutral-500">No invites yet.</p>
+            <p className="py-8 text-center text-sm text-muted-foreground">No invites yet.</p>
           ) : (
             <Table>
               <TableHeader>
@@ -55,14 +55,14 @@ export default async function InvitesPage() {
                   return (
                     <TableRow key={inv.token}>
                       <TableCell>{inv.name}</TableCell>
-                      <TableCell className="text-neutral-500">{inv.email}</TableCell>
+                      <TableCell className="text-muted-foreground">{inv.email}</TableCell>
                       <TableCell>
                         {inv.usedAt ? (
-                          <Badge className="bg-green-100 text-green-800" variant="outline">
+                          <Badge className="bg-green-500/10 text-green-500" variant="outline">
                             accepted
                           </Badge>
                         ) : expired ? (
-                          <Badge className="bg-red-100 text-red-800" variant="outline">
+                          <Badge className="bg-red-500/10 text-red-400" variant="outline">
                             expired
                           </Badge>
                         ) : (

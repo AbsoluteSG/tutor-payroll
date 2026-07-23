@@ -131,7 +131,7 @@ export function ClassRowActions({ row }: { row: EditableClassRow }) {
               <Label htmlFor={`notes-${row.id}`}>Notes</Label>
               <Textarea id={`notes-${row.id}`} name="notes" rows={2} defaultValue={row.notes} />
             </div>
-            {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
+            {state?.error && <p className="text-sm text-red-400">{state.error}</p>}
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
                 Cancel

@@ -41,7 +41,7 @@ export default async function AdminOverview() {
       <Card>
         <CardHeader className="flex-row items-center justify-between">
           <CardTitle className="text-base">Recent submissions</CardTitle>
-          <Link href="/admin/submissions" className="text-sm text-neutral-500 hover:underline">
+          <Link href="/admin/submissions" className="text-sm text-muted-foreground hover:underline">
             View all
           </Link>
         </CardHeader>

@@ -37,8 +37,8 @@ export default async function ClientProfilePage({ params }: { params: Promise<{ 
     <div className="grid gap-6">
       <div>
         <h1 className="text-2xl font-semibold">{client.paymentName}</h1>
-        {client.displayName && <p className="text-sm text-neutral-500">{client.displayName}</p>}
-        {client.notes && <p className="mt-1 text-sm text-neutral-500">{client.notes}</p>}
+        {client.displayName && <p className="text-sm text-muted-foreground">{client.displayName}</p>}
+        {client.notes && <p className="mt-1 text-sm text-muted-foreground">{client.notes}</p>}
       </div>
 
       <StatCards
@@ -78,7 +78,7 @@ export default async function ClientProfilePage({ params }: { params: Promise<{ 
         </CardHeader>
         <CardContent>
           {payments.length === 0 ? (
-            <p className="py-8 text-center text-sm text-neutral-500">No payments recorded yet.</p>
+            <p className="py-8 text-center text-sm text-muted-foreground">No payments recorded yet.</p>
           ) : (
             <Table>
               <TableHeader>
@@ -96,7 +96,7 @@ export default async function ClientProfilePage({ params }: { params: Promise<{ 
                       {p.receivedAt.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                     </TableCell>
                     <TableCell className="capitalize">{p.method.toLowerCase()}</TableCell>
-                    <TableCell className="text-neutral-500">{p.note}</TableCell>
+                    <TableCell className="text-muted-foreground">{p.note}</TableCell>
                     <TableCell className="text-right tabular-nums">{formatUSD(p.amount.toString())}</TableCell>
                   </TableRow>
                 ))}

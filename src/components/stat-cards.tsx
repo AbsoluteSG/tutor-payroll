@@ -11,12 +11,12 @@ export function StatCards({
       {stats.map((s) => (
         <Card key={s.label}>
           <CardContent className="pt-4">
-            <p className="text-sm text-neutral-500">{s.label}</p>
+            <p className="text-sm text-muted-foreground">{s.label}</p>
             <p
               className={cn(
                 "mt-1 text-2xl font-semibold tabular-nums",
-                s.accent === "green" && "text-green-700",
-                s.accent === "red" && "text-red-700",
+                s.accent === "green" && "text-green-500",
+                s.accent === "red" && "text-red-400",
               )}
             >
               {s.value}

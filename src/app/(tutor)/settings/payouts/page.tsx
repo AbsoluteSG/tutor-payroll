@@ -29,23 +29,23 @@ export default async function PayoutsSettingsPage({
       <CardContent className="grid gap-4">
         {dbUser?.stripeOnboarded ? (
           <div className="flex items-center gap-2">
-            <Badge className="bg-green-100 text-green-800" variant="outline">
+            <Badge className="bg-green-500/10 text-green-500" variant="outline">
               Connected
             </Badge>
-            <span className="text-sm text-neutral-600">
+            <span className="text-sm text-muted-foreground">
               Your bank account is linked. Payouts arrive automatically.
             </span>
           </div>
         ) : (
           <>
             {sp.onboarded && !dbUser?.stripeOnboarded && (
-              <p className="text-sm text-neutral-600">
+              <p className="text-sm text-muted-foreground">
                 Thanks! Stripe is verifying your details — this page will show “Connected” once
                 everything clears (usually within a few minutes).
               </p>
             )}
             {sp.error === "stripe-not-configured" && (
-              <p className="text-sm text-red-600">
+              <p className="text-sm text-red-400">
                 Payouts aren&apos;t set up on this server yet. Ask your manager.
               </p>
             )}
@@ -56,7 +56,7 @@ export default async function PayoutsSettingsPage({
                 </Button>
               </form>
             ) : (
-              <p className="text-sm text-neutral-500">
+              <p className="text-sm text-muted-foreground">
                 Online payouts aren&apos;t enabled yet — your manager pays you manually for now.
               </p>
             )}

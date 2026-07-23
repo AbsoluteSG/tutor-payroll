@@ -47,7 +47,7 @@ export function ClassTable({
   emptyMessage?: string;
 }) {
   if (rows.length === 0) {
-    return <p className="py-8 text-center text-sm text-neutral-500">{emptyMessage}</p>;
+    return <p className="py-8 text-center text-sm text-muted-foreground">{emptyMessage}</p>;
   }
 
   return (
@@ -72,7 +72,7 @@ export function ClassTable({
             <TableCell className="whitespace-nowrap">
               {row.date.toLocaleDateString("en-US", { timeZone: "UTC", month: "short", day: "numeric", year: "numeric" })}
               {row.voided && (
-                <Badge variant="outline" className="ml-2 text-red-600">
+                <Badge variant="outline" className="ml-2 text-red-400">
                   voided
                 </Badge>
               )}
@@ -105,7 +105,7 @@ export function ClassTable({
             <TableCell className="text-right tabular-nums">{formatUSD(String(row.tutorRate))}/h</TableCell>
             <TableCell className="text-right tabular-nums">{formatUSD(String(row.tutorEarnings))}</TableCell>
             {showMargin && (
-              <TableCell className="text-right tabular-nums text-neutral-500">
+              <TableCell className="text-right tabular-nums text-muted-foreground">
                 {formatUSD(new Prisma.Decimal(String(row.fullCost)).minus(String(row.tutorEarnings)))}
               </TableCell>
             )}

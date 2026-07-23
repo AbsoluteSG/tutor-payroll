@@ -24,11 +24,11 @@ export function RecordPaymentForm({ clientId }: { clientId: string }) {
     <form action={formAction} className="flex flex-wrap items-end gap-3">
       <input type="hidden" name="clientId" value={clientId} />
       <div className="grid w-32 gap-1">
-        <span className="text-xs text-neutral-500">Amount ($)</span>
+        <span className="text-xs text-muted-foreground">Amount ($)</span>
         <Input name="amount" inputMode="decimal" placeholder="100" required />
       </div>
       <div className="grid w-36 gap-1">
-        <span className="text-xs text-neutral-500">Method</span>
+        <span className="text-xs text-muted-foreground">Method</span>
         <Select
           name="method"
           items={[
@@ -51,17 +51,17 @@ export function RecordPaymentForm({ clientId }: { clientId: string }) {
         </Select>
       </div>
       <div className="grid w-40 gap-1">
-        <span className="text-xs text-neutral-500">Date received</span>
+        <span className="text-xs text-muted-foreground">Date received</span>
         <Input name="receivedAt" type="date" defaultValue={todayISO()} required />
       </div>
       <div className="grid min-w-44 flex-1 gap-1">
-        <span className="text-xs text-neutral-500">Note (optional)</span>
+        <span className="text-xs text-muted-foreground">Note (optional)</span>
         <Input name="note" placeholder="e.g. Zelle confirmation #" />
       </div>
       <Button type="submit" disabled={pending}>
         {pending ? "Recording…" : "Record"}
       </Button>
-      {state?.error && <p className="w-full text-sm text-red-600">{state.error}</p>}
+      {state?.error && <p className="w-full text-sm text-red-400">{state.error}</p>}
     </form>
   );
 }

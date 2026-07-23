@@ -39,7 +39,7 @@ export default async function ClientsPage() {
         </CardHeader>
         <CardContent>
           {clients.length === 0 ? (
-            <p className="py-8 text-center text-sm text-neutral-500">No clients yet.</p>
+            <p className="py-8 text-center text-sm text-muted-foreground">No clients yet.</p>
           ) : (
             <Table>
               <TableHeader>
@@ -60,7 +60,7 @@ export default async function ClientsPage() {
                         {c.paymentName}
                       </Link>
                     </TableCell>
-                    <TableCell className="text-neutral-500">{c.displayName}</TableCell>
+                    <TableCell className="text-muted-foreground">{c.displayName}</TableCell>
                     <TableCell className="text-right tabular-nums">
                       {formatUSD(owedMap.get(c.id) ?? 0)}
                     </TableCell>

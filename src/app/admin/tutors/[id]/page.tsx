@@ -51,14 +51,14 @@ export default async function TutorProfilePage({ params }: { params: Promise<{ i
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-semibold">{tutor.name}</h1>
           {tutor.stripeOnboarded ? (
-            <Badge className="bg-green-100 text-green-800" variant="outline">
+            <Badge className="bg-green-500/10 text-green-500" variant="outline">
               Stripe connected
             </Badge>
           ) : (
             <Badge variant="outline">manual payouts only</Badge>
           )}
         </div>
-        <p className="text-sm text-neutral-500">{tutor.email}</p>
+        <p className="text-sm text-muted-foreground">{tutor.email}</p>
       </div>
 
       <StatCards
@@ -116,7 +116,7 @@ export default async function TutorProfilePage({ params }: { params: Promise<{ i
         </CardHeader>
         <CardContent>
           {payments.length === 0 ? (
-            <p className="py-8 text-center text-sm text-neutral-500">No payments yet.</p>
+            <p className="py-8 text-center text-sm text-muted-foreground">No payments yet.</p>
           ) : (
             <Table>
               <TableHeader>
@@ -140,16 +140,16 @@ export default async function TutorProfilePage({ params }: { params: Promise<{ i
                         variant="outline"
                         className={
                           p.status === "PAID"
-                            ? "bg-green-100 text-green-800"
+                            ? "bg-green-500/10 text-green-500"
                             : p.status === "FAILED"
-                              ? "bg-red-100 text-red-800"
+                              ? "bg-red-500/10 text-red-400"
                               : ""
                         }
                       >
                         {p.status.toLowerCase()}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-neutral-500">{p.note}</TableCell>
+                    <TableCell className="text-muted-foreground">{p.note}</TableCell>
                     <TableCell className="text-right tabular-nums">{formatUSD(p.amount.toString())}</TableCell>
                   </TableRow>
                 ))}

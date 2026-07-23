@@ -143,11 +143,11 @@ export function SubmitClassForm({ options }: { options: ClientOption[] }) {
       </div>
 
       {earningsPreview && (
-        <p className="text-sm text-neutral-600">
+        <p className="text-sm text-muted-foreground">
           You&apos;ll earn <span className="font-semibold">{earningsPreview}</span> for this class.
         </p>
       )}
-      {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
+      {state?.error && <p className="text-sm text-red-400">{state.error}</p>}
 
       <Button type="submit" disabled={pending || !clientId}>
         {pending ? "Submitting…" : "Submit class"}

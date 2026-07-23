@@ -75,7 +75,7 @@ export function RateCardEditor({
       <form action={formAction} className="flex flex-wrap items-end gap-3 rounded-md border p-3">
         <input type="hidden" name="tutorId" value={tutorId} />
         <div className="grid min-w-44 gap-1">
-          <span className="text-xs text-neutral-500">Client</span>
+          <span className="text-xs text-muted-foreground">Client</span>
           <Select
             name="clientId"
             items={clients.map((c) => ({ value: c.id, label: c.label }))}
@@ -95,19 +95,19 @@ export function RateCardEditor({
           </Select>
         </div>
         <div className="grid w-32 gap-1">
-          <span className="text-xs text-neutral-500">Rate ($/h)</span>
+          <span className="text-xs text-muted-foreground">Rate ($/h)</span>
           <Input name="tutorRate" inputMode="decimal" placeholder="30" required />
         </div>
         <div className="grid w-36 gap-1">
-          <span className="text-xs text-neutral-500">Client rate ($/h)</span>
+          <span className="text-xs text-muted-foreground">Client rate ($/h)</span>
           <Input name="defaultFullCost" inputMode="decimal" placeholder="optional" />
         </div>
         <Button type="submit" size="sm" disabled={pending}>
           {pending ? "Saving…" : "Save rate"}
         </Button>
-        {state?.error && <p className="w-full text-sm text-red-600">{state.error}</p>}
+        {state?.error && <p className="w-full text-sm text-red-400">{state.error}</p>}
         {unassigned.length === 0 && clients.length > 0 && rateCards.length === clients.length && (
-          <p className="w-full text-xs text-neutral-400">All clients assigned — picking one updates its rate.</p>
+          <p className="w-full text-xs text-muted-foreground">All clients assigned — picking one updates its rate.</p>
         )}
       </form>
     </div>

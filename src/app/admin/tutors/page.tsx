@@ -30,7 +30,7 @@ export default async function TutorsPage() {
       </CardHeader>
       <CardContent>
         {tutors.length === 0 ? (
-          <p className="py-8 text-center text-sm text-neutral-500">
+          <p className="py-8 text-center text-sm text-muted-foreground">
             No tutors yet — send an invite from the{" "}
             <Link href="/admin/invites" className="underline">
               Invites
@@ -60,10 +60,10 @@ export default async function TutorsPage() {
                       </Badge>
                     )}
                   </TableCell>
-                  <TableCell className="text-neutral-500">{t.email}</TableCell>
+                  <TableCell className="text-muted-foreground">{t.email}</TableCell>
                   <TableCell>
                     {t.stripeOnboarded ? (
-                      <Badge className="bg-green-100 text-green-800" variant="outline">
+                      <Badge className="bg-green-500/10 text-green-500" variant="outline">
                         Stripe connected
                       </Badge>
                     ) : (
