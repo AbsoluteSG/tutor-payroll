@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useState, useTransition } from "react";
 import { MoreHorizontal } from "lucide-react";
 import {
   setClassVoidedAction,
@@ -40,12 +40,21 @@ export type EditableClassRow = {
 
 export function ClassRowActions({ row }: { row: EditableClassRow }) {
   const [editOpen, setEditOpen] = useState(false);
-  const [state, formAction, pending] = useActionState(updateClassAction, undefined);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
 
-  // Close the dialog once an edit saves successfully.
-  useEffect(() => {
-    if (state && !state.error) setEditOpen(false);
-  }, [state]);
+  // Submit the edit, then close the dialog on success or surface the error.
+  const formAction = (formData: FormData) => {
+    startTransition(async () => {
+      const result = await updateClassAction(undefined, formData);
+      if (result?.error) {
+        setError(result.error);
+      } else {
+        setError(null);
+        setEditOpen(false);
+      }
+    });
+  };
 
   return (
     <>
@@ -131,7 +140,7 @@ export function ClassRowActions({ row }: { row: EditableClassRow }) {
               <Label htmlFor={`notes-${row.id}`}>Notes</Label>
               <Textarea id={`notes-${row.id}`} name="notes" rows={2} defaultValue={row.notes} />
             </div>
-            {state?.error && <p className="text-sm text-red-400">{state.error}</p>}
+            {error && <p className="text-sm text-red-400">{error}</p>}
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
                 Cancel
