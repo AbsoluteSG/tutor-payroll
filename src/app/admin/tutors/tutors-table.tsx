@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { formatUSDPlain } from "@/lib/format-client";
 import { ListFilterBar } from "@/components/list-filter-bar";
+import { TutorRowActions } from "./tutor-row-actions";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -18,6 +19,7 @@ export type TutorRow = {
   id: string;
   name: string;
   email: string;
+  username: string;
   active: boolean;
   stripeOnboarded: boolean;
   owed: string;
@@ -31,7 +33,13 @@ export function TutorsTable({ tutors }: { tutors: TutorRow[] }) {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return tutors.filter((t) => {
-      if (q && !t.name.toLowerCase().includes(q) && !t.email.toLowerCase().includes(q)) return false;
+      if (
+        q &&
+        !t.name.toLowerCase().includes(q) &&
+        !t.email.toLowerCase().includes(q) &&
+        !t.username.toLowerCase().includes(q)
+      )
+        return false;
       if (status === "active" && !t.active) return false;
       if (status === "inactive" && t.active) return false;
       if (payouts === "stripe" && !t.stripeOnboarded) return false;
@@ -45,7 +53,7 @@ export function TutorsTable({ tutors }: { tutors: TutorRow[] }) {
       <ListFilterBar
         query={query}
         onQueryChange={setQuery}
-        searchPlaceholder="Search by name or email…"
+        searchPlaceholder="Search by name, email, or username…"
         filters={[
           {
             label: "Status",
@@ -82,6 +90,7 @@ export function TutorsTable({ tutors }: { tutors: TutorRow[] }) {
               <TableHead>Email</TableHead>
               <TableHead>Payouts</TableHead>
               <TableHead className="text-right">Owed</TableHead>
+              <TableHead />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -108,6 +117,17 @@ export function TutorsTable({ tutors }: { tutors: TutorRow[] }) {
                   )}
                 </TableCell>
                 <TableCell className="text-right tabular-nums">{formatUSDPlain(t.owed)}</TableCell>
+                <TableCell className="text-right">
+                  <TutorRowActions
+                    row={{
+                      id: t.id,
+                      name: t.name,
+                      email: t.email,
+                      username: t.username,
+                      active: t.active,
+                    }}
+                  />
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

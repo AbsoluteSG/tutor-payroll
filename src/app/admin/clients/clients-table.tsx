@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { formatUSDPlain } from "@/lib/format-client";
 import { ListFilterBar } from "@/components/list-filter-bar";
+import { ClientRowActions } from "./client-row-actions";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -18,6 +19,7 @@ export type ClientRow = {
   id: string;
   paymentName: string;
   displayName: string;
+  notes: string;
   active: boolean;
   owed: string;
 };
@@ -86,6 +88,7 @@ export function ClientsTable({ clients }: { clients: ClientRow[] }) {
               <TableHead>Payment name</TableHead>
               <TableHead>Display name</TableHead>
               <TableHead className="text-right">Owes</TableHead>
+              <TableHead />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -106,6 +109,17 @@ export function ClientsTable({ clients }: { clients: ClientRow[] }) {
                 </TableCell>
                 <TableCell className="text-muted-foreground">{c.displayName}</TableCell>
                 <TableCell className="text-right tabular-nums">{formatUSDPlain(c.owed)}</TableCell>
+                <TableCell className="text-right">
+                  <ClientRowActions
+                    row={{
+                      id: c.id,
+                      paymentName: c.paymentName,
+                      displayName: c.displayName,
+                      notes: c.notes,
+                      active: c.active,
+                    }}
+                  />
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

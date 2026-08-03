@@ -8,7 +8,7 @@ export default async function ClientsPage() {
   const [clients, owedMap] = await Promise.all([
     prisma.client.findMany({
       orderBy: { paymentName: "asc" },
-      select: { id: true, paymentName: true, displayName: true, active: true },
+      select: { id: true, paymentName: true, displayName: true, notes: true, active: true },
     }),
     getClientOwedMap(),
   ]);
@@ -37,6 +37,7 @@ export default async function ClientsPage() {
                 id: c.id,
                 paymentName: c.paymentName,
                 displayName: c.displayName ?? "",
+                notes: c.notes ?? "",
                 active: c.active,
                 owed: (owedMap.get(c.id) ?? 0).toString(),
               }))}

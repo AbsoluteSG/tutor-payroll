@@ -9,7 +9,14 @@ export default async function TutorsPage() {
     prisma.user.findMany({
       where: { role: "TUTOR" },
       orderBy: { name: "asc" },
-      select: { id: true, name: true, email: true, active: true, stripeOnboarded: true },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        username: true,
+        active: true,
+        stripeOnboarded: true,
+      },
     }),
     getTutorOwedMap(),
   ]);
@@ -34,6 +41,7 @@ export default async function TutorsPage() {
               id: t.id,
               name: t.name,
               email: t.email,
+              username: t.username ?? "",
               active: t.active,
               stripeOnboarded: t.stripeOnboarded,
               owed: (owedMap.get(t.id) ?? 0).toString(),

@@ -66,12 +66,25 @@ export const inviteSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(120),
 });
 
+/** Manager editing a pending invite from the row menu. */
+export const inviteEditSchema = inviteSchema.extend({
+  token: z.string().min(1),
+});
+
 /** Lowercase letters, digits, dot/dash/underscore; no "@" so it can't collide with emails. */
 export const usernameSchema = z
   .string()
   .trim()
   .toLowerCase()
   .regex(/^[a-z0-9][a-z0-9._-]{2,29}$/, "Username: 3–30 chars, letters/numbers/._- only");
+
+/** Manager editing a tutor from the row menu. Blank username clears it. */
+export const tutorEditSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().trim().min(1, "Name is required").max(120),
+  email: z.string().trim().toLowerCase().email("Invalid email"),
+  username: usernameSchema.optional().or(z.literal("")),
+});
 
 export const acceptInviteSchema = z.object({
   token: z.string().min(1),

@@ -1,8 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import { deleteInviteAction } from "@/lib/actions/admin-actions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -12,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { NewInviteForm } from "./new-invite-form";
-import { CopyLinkButton } from "./copy-link-button";
+import { InviteRowActions } from "./invite-row-actions";
 
 export default async function InvitesPage() {
   const invites = await prisma.inviteToken.findMany({ orderBy: { createdAt: "desc" } });
@@ -46,7 +44,7 @@ export default async function InvitesPage() {
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Link</TableHead>
+                  <TableHead className="text-right" />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -70,17 +68,16 @@ export default async function InvitesPage() {
                         )}
                       </TableCell>
                       <TableCell className="text-right">
-                        {!inv.usedAt && !expired && (
-                          <CopyLinkButton url={`${appUrl}/invite/${inv.token}`} />
-                        )}
-                        {!inv.usedAt && (
-                          <form action={deleteInviteAction} className="inline-block">
-                            <input type="hidden" name="token" value={inv.token} />
-                            <Button variant="ghost" size="sm" type="submit">
-                              Delete
-                            </Button>
-                          </form>
-                        )}
+                        <InviteRowActions
+                          row={{
+                            token: inv.token,
+                            name: inv.name,
+                            email: inv.email,
+                            accepted: Boolean(inv.usedAt),
+                            expired,
+                            url: `${appUrl}/invite/${inv.token}`,
+                          }}
+                        />
                       </TableCell>
                     </TableRow>
                   );
