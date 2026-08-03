@@ -1,10 +1,15 @@
-import { requireUser } from "@/lib/auth";
+import { requireManager } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProfileForm } from "@/components/profile-form";
 
-export default async function ProfilePage() {
-  const sessionUser = await requireUser();
+/**
+ * A manager's own account settings. Same form as the tutor-side profile page,
+ * but under the admin layout so managers keep their own nav — this matters once
+ * there is more than one admin, each with their own login.
+ */
+export default async function AdminProfilePage() {
+  const sessionUser = await requireManager();
   const user = await prisma.user.findUnique({
     where: { id: sessionUser.id },
     select: { name: true, email: true, username: true },

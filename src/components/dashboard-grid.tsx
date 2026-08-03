@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   DndContext,
   PointerSensor,
@@ -51,16 +51,23 @@ function SortableWidget({
     transform: CSS.Transform.toString(transform),
     transition,
     zIndex: isDragging ? 20 : undefined,
-    // Let the browser scroll/tap normally until a drag actually begins; dnd-kit
-    // manages the gesture via the sensor's delay/tolerance.
-    touchAction: "manipulation",
+    // Outside edit mode the browser owns the gesture so the page scrolls
+    // normally; the sensor's delay/tolerance decides when a hold becomes a drag.
+    // Once rearranging, the card must own touch events outright — with any
+    // touch-action other than "none" the browser claims the drag as a scroll
+    // and dnd-kit never sees the move.
+    touchAction: editMode ? "none" : "manipulation",
   };
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={cn("relative", editMode && "cursor-grab", isDragging && "opacity-80 cursor-grabbing")}
+      className={cn(
+        "relative",
+        editMode && "cursor-grab select-none",
+        isDragging && "opacity-80 cursor-grabbing",
+      )}
       // The whole card is the drag surface (hold to lift into a drag).
       {...attributes}
       {...listeners}
@@ -113,13 +120,16 @@ export function DashboardGrid({ items, storageKey }: { items: Item[]; storageKey
   // server and client, so keep it out of SSR: render a plain grid until mounted.
   const [mounted, setMounted] = useState(false);
 
-  // Not in edit mode: press-and-hold 3s to lift a card straight into a drag
-  // (iPhone-style). Once in edit mode: drags start immediately on a small move.
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: editMode ? { distance: 6 } : { delay: 3000, tolerance: 8 },
-    }),
+  // Not in edit mode: press-and-hold to lift a card straight into a drag
+  // (iPhone-style). 500ms matches the platform long-press; the old 3s threshold
+  // was long enough that the gesture read as broken. `tolerance` aborts the
+  // activation if the finger moves first, so scrolling still wins.
+  // Once in edit mode: drags start immediately on a small move.
+  const activationConstraint = useMemo(
+    () => (editMode ? { distance: 6 } : { delay: 500, tolerance: 8 }),
+    [editMode],
   );
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint }));
 
   // Load the saved order once on mount. Reading localStorage during render
   // would cause a hydration mismatch (the server has no localStorage), so this
@@ -184,7 +194,7 @@ export function DashboardGrid({ items, storageKey }: { items: Item[]; storageKey
         <span className="text-muted-foreground">
           {editMode
             ? "Drag the cards, or use the arrows, to rearrange them."
-            : "Tip: press & hold a card (or tap Rearrange) to reorder."}
+            : "Tip: hold a card for a moment (or tap Rearrange) to reorder."}
         </span>
         <Button variant={editMode ? "default" : "outline"} size="sm" onClick={() => setEditMode((v) => !v)}>
           {editMode ? "Done" : "Rearrange"}

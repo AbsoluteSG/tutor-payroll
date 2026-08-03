@@ -52,7 +52,10 @@ export async function updateProfileAction(_prev: ActionResult, formData: FormDat
     throw err;
   }
 
+  // Both profile pages, plus the layouts whose header shows the name.
   revalidatePath("/settings/profile");
   revalidatePath("/dashboard");
+  revalidatePath("/admin/profile");
+  revalidatePath("/admin");
   return {};
 }
