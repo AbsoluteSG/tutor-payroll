@@ -1,0 +1,22 @@
+# Keep CLI deploys small. Without this the whole working directory is
+# uploaded — node_modules and .next alone are over 1GB, which stalls the
+# deploy long before the build starts.
+#
+# Not needed for git-triggered deploys (those only see committed files),
+# but it keeps `vercel deploy` usable as a fallback.
+
+node_modules
+.next
+out
+build
+coverage
+
+.git
+.vercel
+
+# Env values come from the Vercel project settings, never from the upload.
+.env*
+
+*.tsbuildinfo
+.DS_Store
+npm-debug.log*
