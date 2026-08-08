@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
+import { BackgroundFade } from "@/components/background-fade";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,11 +31,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-background font-sans">
         {children}
-        {/* Content fades out at the viewport edge instead of hard-clipping. */}
-        <div
-          aria-hidden
-          className="pointer-events-none fixed inset-x-0 bottom-0 z-40 h-16 bg-linear-to-t from-background to-transparent"
-        />
+        <BackgroundFade />
         <Toaster richColors />
       </body>
     </html>

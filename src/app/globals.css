@@ -151,6 +151,247 @@
   }
 }
 
+/* Editorial marquee ticker (marketing page /v3). Two identical track copies sit
+   side by side and the pair slides left by exactly half its width, so the loop
+   is seamless. Pauses entirely for reduced-motion users. */
+@keyframes marquee-slide {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.animate-marquee {
+  animation: marquee-slide 38s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee {
+    animation: none;
+  }
+}
+
+/* ── Scroll-in-place sequence for the subject pages (/v3/courses/*) ─────────
+   The page is a fixed viewport that never scrolls: no scrollbar, nothing leaves
+   the screen. A JS hook (use-virtual-scroll.ts) turns wheel/touch/key input into
+   a progress figure published as --p on the host element, and everything below
+   is derived from it with calc(). No keyframes and no scroll timelines are
+   involved, which is why it works regardless of scroll-driven-animation support.
+
+   --p counts sections: 0 is the hero, 1 the next panel, and so on. Every rule
+   here defaults --p to 0, so with JS disabled or reduced motion preferred the
+   markup renders as a plain readable document. */
+
+/* Dot columns rise proportionally to progress. --dy is the column's travel and
+   --span how much progress it takes to fade out, both set per column, which is
+   what staggers the dissolve. The 0.18 offset holds the plate at full strength
+   briefly before anything moves. */
+.v3-dot-layer {
+  /* min() caps the travel at one section's worth — without it the columns keep
+     translating for the rest of the sequence, long after they are invisible. */
+  transform: translateY(calc(var(--dy, -60px) * min(1, var(--p, 0))));
+  opacity: calc(1 - max(0, var(--p, 0) - 0.18) / var(--span, 0.8));
+  will-change: transform, opacity;
+}
+
+/* The hero leaves over the same window in which the first panel arrives, so the
+   two crossfade rather than both being partly visible at once. Without this its
+   content stays at full opacity behind the later panels. */
+.v3-hero {
+  opacity: calc((1.15 - var(--p, 0)) / 0.3);
+}
+
+/* Hero furniture clears out over the first section's worth of progress. */
+.v3-stage-fade {
+  opacity: calc(1 - var(--p, 0) / 0.5);
+  transform: translateY(calc(var(--p, 0) * -14px));
+}
+
+/* The call to action underneath, uncovered as the plate empties. */
+.v3-stage-reveal {
+  opacity: calc((var(--p, 0) - 0.5) / 0.4);
+  transform: translateY(calc((1 - var(--p, 0)) * 16px));
+}
+
+/* A content panel is keyed to its own index via --i: it fades up as progress
+   approaches it and away as progress passes, the two sides combined with min().
+   Panels are stacked in the same space, so this is a crossfade in place.
+
+   The 0.3 windows are centred on the boundaries between panels (i - 0.15 to
+   i + 0.15), so exactly one panel is legible at a time. Wider windows left the
+   incoming panel ghosting behind the outgoing one for most of a section, which
+   read as muddle rather than transition. */
+.v3-panel {
+  opacity: min(
+    calc((var(--p, 0) - var(--i) + 0.15) / 0.3),
+    calc((var(--i) + 1.15 - var(--p, 0)) / 0.3)
+  );
+  transform: translateY(calc((var(--i) - var(--p, 0)) * 16px));
+}
+
+/* The closing panel arrives and stays — it holds the call to action, so it must
+   not fade back out from under the reader. */
+.v3-panel-last {
+  opacity: calc((var(--p, 0) - var(--i) + 0.15) / 0.3);
+  transform: translateY(calc((var(--i) - var(--p, 0)) * 16px));
+}
+
+/* Panels are only interactive while they are the current one, so links behind a
+   faded-out panel cannot be clicked or tabbed into. */
+.v3-hero,
+.v3-panel,
+.v3-panel-last {
+  pointer-events: none;
+}
+.v3-hero[data-active="true"],
+.v3-panel[data-active="true"],
+.v3-panel-last[data-active="true"] {
+  pointer-events: auto;
+}
+
+/* ELA hero: a sentence performing its own close reading. Each mark — a bracket
+   and its grammatical label — draws outward from its centre as progress
+   advances, staggered by --i so the sentence comes apart one constituent at a
+   time. --t is the mark's own 0..1 progress, defined once on the mark and read
+   by its children. */
+.ela-mark {
+  --t: max(0, min(1, calc((var(--p, 0) - var(--i, 0) * 0.14 - 0.04) / 0.26)));
+  opacity: var(--t);
+}
+.ela-mark-rule {
+  transform: scaleX(var(--t));
+  transform-origin: center;
+}
+.ela-mark-label {
+  transform: translateY(calc((1 - var(--t)) * 6px));
+}
+/* The sentence lifts slightly to make room for the analysis beneath it. */
+.ela-sentence {
+  transform: translateY(calc(min(1, var(--p, 0)) * -0.85rem));
+}
+
+/* Used where a panel could still exceed a short viewport: it stays reachable
+   without putting a scrollbar back on screen. */
+.v3-no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.v3-no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Typewriter caret for the /v3 hero word slot. Holds solid while characters are
+   being typed or deleted (the component drops the blink class then), and blinks
+   only while the finished word is being held. */
+@keyframes v3-caret-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+.v3-caret-blink {
+  animation: v3-caret-blink 1.05s step-end infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .v3-caret-blink {
+    animation: none;
+  }
+}
+
+/* ── Marketing page /v4: HUD + glitch primitives ──────────────────────────
+   Chromatic aberration is two offset colour copies of the same text sitting
+   under the real glyphs in screen blend mode; the jitter is intentionally
+   sparse (long holds, brief displacement) so it reads as signal interference
+   rather than a spinning decoration. All of it stops for reduced motion. */
+@keyframes v4-aberr-a {
+  0%,
+  92%,
+  100% {
+    transform: translate3d(-1.5px, 0, 0);
+  }
+  93% {
+    transform: translate3d(-7px, 1px, 0);
+  }
+  95% {
+    transform: translate3d(4px, -2px, 0);
+  }
+  97% {
+    transform: translate3d(-3px, 1px, 0);
+  }
+}
+@keyframes v4-aberr-b {
+  0%,
+  92%,
+  100% {
+    transform: translate3d(1.5px, 0, 0);
+  }
+  93% {
+    transform: translate3d(6px, -1px, 0);
+  }
+  95% {
+    transform: translate3d(-5px, 2px, 0);
+  }
+  97% {
+    transform: translate3d(3px, -1px, 0);
+  }
+}
+@keyframes v4-scan {
+  from {
+    background-position-y: 0;
+  }
+  to {
+    background-position-y: 100vh;
+  }
+}
+@keyframes v4-flicker {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  47% {
+    opacity: 0.5;
+  }
+  48% {
+    opacity: 0.16;
+  }
+  49% {
+    opacity: 0.5;
+  }
+  86% {
+    opacity: 0.5;
+  }
+  87% {
+    opacity: 0.24;
+  }
+  88% {
+    opacity: 0.5;
+  }
+}
+.v4-aberr-a {
+  animation: v4-aberr-a 7s steps(1, end) infinite;
+}
+.v4-aberr-b {
+  animation: v4-aberr-b 7s steps(1, end) infinite;
+}
+.v4-scan {
+  animation: v4-scan 9s linear infinite;
+}
+.v4-flicker {
+  animation: v4-flicker 6.5s steps(1, end) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .v4-aberr-a,
+  .v4-aberr-b,
+  .v4-scan,
+  .v4-flicker {
+    animation: none;
+  }
+}
+
 /* iPhone-style "edit mode" jiggle for reorderable dashboard widgets. Applied
    to an inner wrapper so it never conflicts with dnd-kit's drag transform. */
 @media (prefers-reduced-motion: no-preference) {
