@@ -2,6 +2,7 @@ import { Instrument_Serif } from "next/font/google";
 import Link from "next/link";
 import { HeroPlate } from "./v3/hero-plate";
 import { MorphWord } from "./v3/morph-word";
+import { NAV_BAR, NAV_ITEM, NAV_WORDMARK } from "./v3/nav-metrics";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 /**
@@ -50,13 +51,11 @@ export function LandingPageV3() {
       </svg>
 
       {/* ───────────────────────── Nav ───────────────────────── */}
-      <header className="relative z-20 flex shrink-0 items-center justify-between border-b border-current/12 px-5 py-4 sm:px-8">
+      <header className={`relative z-20 ${NAV_BAR}`}>
         {/* Instrument Serif is already narrow, so this wordmark gets a little
             positive tracking and room to breathe rather than tracking-tight. */}
-        <span className="font-[family-name:var(--font-editorial)] text-[1.5rem] leading-[1.15] tracking-[0.035em]">
-          Borough Prep
-        </span>
-        <nav className="hidden gap-8 font-mono text-[0.65rem] tracking-[0.18em] uppercase sm:flex">
+        <span className={NAV_WORDMARK}>Borough Prep</span>
+        <nav className={`hidden gap-8 sm:flex ${NAV_ITEM}`}>
           <Link href="/v3/courses" className="transition-opacity hover:opacity-55">
             Courses
           </Link>
@@ -70,7 +69,7 @@ export function LandingPageV3() {
         <div className="flex items-center gap-3">
           <Link
             href="/v3/courses"
-            className="font-mono text-[0.65rem] tracking-[0.18em] uppercase underline decoration-current/30 underline-offset-[5px] transition-colors hover:decoration-current"
+            className={`${NAV_ITEM} underline decoration-current/30 underline-offset-[5px] transition-colors hover:decoration-current`}
           >
             Begin
           </Link>

@@ -1,11 +1,12 @@
 "use client";
 
 import type { CSSProperties, ReactNode } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Instrument_Serif } from "next/font/google";
 import Link from "next/link";
 import { useVirtualScroll } from "./use-virtual-scroll";
 import { usePrefersReducedMotion } from "./use-reduced-motion";
+import { NAV_BAR, NAV_ITEM } from "./nav-metrics";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 /**
@@ -75,10 +76,10 @@ type Props = {
 export function SectionHead({ title, meta }: { title: string; meta: string }) {
   return (
     <div className="flex items-baseline justify-between border-b border-current/20 pb-4">
-      <h2 className="font-[family-name:var(--font-editorial)] text-3xl tracking-tight sm:text-4xl">
+      <h2 className="font-[family-name:var(--font-editorial)] text-[3.375rem] tracking-tight sm:text-[4.5rem]">
         {title}
       </h2>
-      <span className="font-mono text-[0.58rem] tracking-[0.2em] uppercase opacity-45">
+      <span className="v3-micro shrink-0 font-mono uppercase opacity-55">
         {meta}
       </span>
     </div>
@@ -108,7 +109,7 @@ function Panel({
   if (!locked) {
     return (
       <section
-        className={`${skin} flex min-h-[100svh] flex-col justify-center px-5 py-20 sm:px-8`}
+        className={`${skin} flex min-h-[100svh] flex-col justify-center px-4 py-14 sm:px-6`}
         style={ground}
       >
         <div className="mx-auto w-full">{spec.content}</div>
@@ -122,7 +123,7 @@ function Panel({
       aria-hidden={!active}
       className={`${skin} ${
         spec.last ? "v3-panel-last" : "v3-panel"
-      } v3-no-scrollbar absolute inset-0 flex flex-col justify-center overflow-y-auto px-5 pt-16 pb-12 sm:px-8 sm:pt-20 sm:pb-16`}
+      } v3-no-scrollbar absolute inset-0 flex flex-col justify-center overflow-y-auto px-4 pt-12 pb-10 sm:px-6 sm:pt-14 sm:pb-12`}
       style={{ ...ground, "--i": index } as CSSProperties}
     >
       <div className="mx-auto w-full">{spec.content}</div>
@@ -139,11 +140,33 @@ export function SubjectPage({
 }: Props) {
   const locked = !usePrefersReducedMotion();
   const [active, setActive] = useState(0);
-  const { hostRef, goTo } = useVirtualScroll({
+  const { hostRef, goTo, jumpTo } = useVirtualScroll({
     max: sections.length - 1,
     enabled: locked,
     onActiveChange: setActive,
   });
+
+  /**
+   * Open on the section named by the URL fragment, e.g. …/math#book.
+   *
+   * This is what lets the course gallery link straight at the booking panel
+   * rather than dropping a visitor on the hero to find it themselves. Matched
+   * against the section names the page already declares, so a page gains deep
+   * links to its sections just by naming them.
+   *
+   * Only meaningful while locked — unlocked, the page is an ordinary document
+   * and the browser resolves the fragment itself.
+   */
+  useEffect(() => {
+    if (!locked) return;
+    const slug = window.location.hash.replace(/^#/, "").toLowerCase();
+    if (!slug) return;
+    const index = sections.findIndex((s) => s.toLowerCase() === slug);
+    if (index > 0) jumpTo(index);
+    // Deliberately mount-only: this reads the entry URL, and re-running it
+    // would yank a reader back to the fragment mid-sequence.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locked]);
 
   // Section 0 is the hero; panel i is section i + 1.
   const onInverted = active > 0 && Boolean(panels[active - 1]?.invert);
@@ -181,12 +204,12 @@ export function SubjectPage({
       <header
         className={`${
           locked ? "absolute" : "sticky"
-        } inset-x-0 top-0 z-30 flex items-center justify-between border-b border-current/12 px-5 py-4 sm:px-8`}
+        } inset-x-0 top-0 z-30 ${NAV_BAR}`}
         style={{ backgroundColor: PAPER }}
       >
         <Link
           href="/v3/courses"
-          className="group inline-flex items-center gap-2 font-mono text-[0.62rem] tracking-[0.2em] uppercase transition-opacity hover:opacity-60"
+          className={`${NAV_ITEM} group inline-flex items-center gap-2 transition-opacity hover:opacity-60`}
         >
           <span className="inline-block transition-transform duration-300 group-hover:-translate-x-1">
             &larr;
@@ -196,7 +219,7 @@ export function SubjectPage({
         <div className="flex items-center gap-2">
           {/* Hidden on the narrowest screens, where it collided with the back
               link. The page names the subject in its own hero anyway. */}
-          <span className="hidden font-mono text-[0.62rem] tracking-[0.2em] uppercase opacity-45 min-[420px]:inline">
+          <span className={`${NAV_ITEM} hidden opacity-50 min-[420px]:inline`}>
             {plateLabel}
           </span>
           <ThemeToggle className="-mr-1.5 opacity-55" />
@@ -224,7 +247,7 @@ export function SubjectPage({
           } absolute top-1/2 right-3 z-30 hidden -translate-y-1/2 flex-col items-end gap-1.5 transition-colors duration-500 sm:right-5 sm:flex`}
           style={{ color: INK }}
         >
-          <span className="mb-1.5 font-mono text-[0.5rem] tracking-[0.18em] tabular-nums opacity-45">
+          <span className="v3-micro mb-1.5 font-mono tabular-nums opacity-55">
             {String(active + 1).padStart(2, "0")}
             <span className="opacity-50"> / </span>
             {String(sections.length).padStart(2, "0")}
@@ -239,19 +262,19 @@ export function SubjectPage({
               className="group flex items-center justify-end gap-2.5"
             >
               <span
-                className={`font-mono text-[0.55rem] tracking-[0.16em] uppercase transition-opacity duration-300 ${
+                className={`v3-micro font-mono uppercase transition-opacity duration-300 ${
                   active === i
                     ? "opacity-95"
-                    : "opacity-40 group-hover:opacity-80"
+                    : "opacity-50 group-hover:opacity-85"
                 }`}
               >
                 {label}
               </span>
               <span
                 aria-hidden
-                className="block w-[3px] rounded-full transition-all duration-300"
+                className="block w-[4px] rounded-full transition-all duration-300"
                 style={{
-                  height: active === i ? 26 : 11,
+                  height: active === i ? 30 : 14,
                   backgroundColor: active === i ? ACCENT : "currentColor",
                   opacity: active === i ? 1 : 0.3,
                 }}
@@ -284,23 +307,41 @@ export function SubjectPage({
         />
       ))}
 
+      {/* The scroll cue.
+          On a page that has taken the scrollbar away this is the only thing
+          telling a visitor there is anything past the hero, and on touch it is
+          the only one they get at all — the section rail is desktop-only. So it
+          is a real control rather than a caption: a bordered pill at full
+          opacity, and clicking it advances a section for anyone who reaches for
+          it instead of scrolling. */}
       {locked ? (
-        <div
-          aria-hidden
-          className="v3-stage-fade absolute inset-x-0 bottom-4 z-20 flex flex-col items-center gap-1.5 font-mono text-[0.55rem] tracking-[0.24em] uppercase opacity-40"
+        <button
+          type="button"
+          onClick={() => goTo(Math.min(active + 1, sections.length - 1))}
+          // It fades with the rest of the hero furniture, and an invisible
+          // button is still tabbable and still clickable — so it is taken out
+          // of service entirely once the hero is behind us.
+          disabled={active !== 0}
+          aria-hidden={active !== 0}
+          // Sized independently of .v3-label: this one is deliberately twice
+          // the rest of the furniture, not one step up from it.
+          className="v3-stage-fade absolute inset-x-0 bottom-6 z-20 mx-auto flex w-fit items-center gap-5 rounded-full border-2 px-11 py-5 font-mono text-[2rem] leading-none tracking-[0.08em] uppercase transition-colors duration-300 hover:bg-current/[0.06] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--v3-accent)] disabled:pointer-events-none"
+          style={{ borderColor: "color-mix(in oklab, var(--v3-ink) 45%, transparent)" }}
         >
-          <span>Scroll</span>
-          {/* The only affordance a touch visitor gets — the section rail beside
-              it is desktop-only. */}
-          <span className="v3-scroll-nudge block text-[0.7rem] leading-none">
+          Scroll
+          <span
+            aria-hidden
+            className="v3-scroll-nudge block text-[2.7rem] leading-none"
+            style={{ color: ACCENT }}
+          >
             &darr;
           </span>
-        </div>
+        </button>
       ) : null}
 
       {!locked ? (
-        <footer className="relative z-10 border-t border-current/12 px-5 py-6 sm:px-8">
-          <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-2 font-mono text-[0.55rem] tracking-[0.18em] uppercase opacity-45 sm:flex-row">
+        <footer className="relative z-10 border-t border-current/12 px-4 py-5 sm:px-6">
+          <div className="v3-micro mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 font-mono uppercase opacity-55 sm:flex-row">
             <span>Borough Prep — Brooklyn, NY</span>
             <span>{footerRight}</span>
           </div>

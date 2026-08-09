@@ -215,10 +215,32 @@ export function useVirtualScroll({ max, enabled, onActiveChange }: Options) {
     };
   }, [max, enabled]);
 
-  /** Jump to a section (used by the section index). */
+  /** Ease to a section (used by the section index and the scroll cue). */
   function goTo(index: number) {
     target.current = sectionTarget(index, max);
   }
 
-  return { hostRef, goTo };
+  /**
+   * Land on a section immediately, without easing there.
+   *
+   * For arriving at a section rather than travelling to one — a link into
+   * /v3/courses/math#book should open on the booking panel, not open on the
+   * hero and then animate past it while the visitor watches.
+   *
+   * Writes --p directly and seeds both ends of the easing loop, so the next
+   * frame has nothing left to travel and the sequence continues from here.
+   */
+  function jumpTo(index: number) {
+    const p = sectionTarget(index, max);
+    target.current = p;
+    current.current = p;
+    hostRef.current?.style.setProperty("--p", p.toFixed(4));
+    const active = Math.floor(p);
+    if (active !== activeRef.current) {
+      activeRef.current = active;
+      onActiveChangeRef.current?.(active);
+    }
+  }
+
+  return { hostRef, goTo, jumpTo };
 }

@@ -46,10 +46,26 @@ const TRACKS = [
   { name: "Literature seminar", note: "Small group" },
 ];
 
+/** PLACEHOLDER credentials — see the warning in v3/booking-panel.tsx. */
 const TUTORS = [
-  { initials: "MR", name: "Maya R.", focus: "Essay & argument" },
-  { initials: "DL", name: "Daniel L.", focus: "Close reading" },
-  { initials: "SO", name: "Sofia O.", focus: "Timed writing" },
+  {
+    initials: "MR",
+    name: "Maya R.",
+    focus: "Essay & argument",
+    credentials: ["M.F.A. Nonfiction, Columbia", "8 years essay instruction", "Former admissions reader"],
+  },
+  {
+    initials: "DL",
+    name: "Daniel L.",
+    focus: "Close reading",
+    credentials: ["Ph.D. English, CUNY", "12 years close reading", "Published literary critic"],
+  },
+  {
+    initials: "SO",
+    name: "Sofia O.",
+    focus: "Timed writing",
+    credentials: ["M.A. Journalism, NYU", "7 years exam writing", "Former AP Lang scorer"],
+  },
 ];
 
 const TRIVIUM = [
@@ -79,11 +95,11 @@ export function ElaPageV3() {
       hero={(locked) => (
         <>
           <div className="v3-stage-fade relative z-10 px-5 sm:px-8">
-            <div className="mx-auto max-w-5xl text-center">
-              <p className="font-mono text-[0.62rem] tracking-[0.28em] uppercase opacity-55">
+            <div className="mx-auto max-w-6xl text-center">
+              <p className="v3-label font-mono uppercase opacity-60">
                 English Language Arts
               </p>
-              <h1 className="mx-auto mt-6 max-w-3xl font-[family-name:var(--font-editorial)] text-[clamp(2.2rem,6.4vw,4.6rem)] leading-[0.98] tracking-[-0.02em] text-balance">
+              <h1 className="mx-auto mt-6 max-w-3xl font-[family-name:var(--font-editorial)] text-[clamp(3.3rem,9.6vw,6.9rem)] leading-[0.98] tracking-[-0.02em] text-balance">
                 Read as though the
                 <br />
                 sentence were{" "}
@@ -109,12 +125,6 @@ export function ElaPageV3() {
           >
             <SentenceAnatomy />
           </div>
-
-          <p className="v3-stage-fade relative z-10 mt-4 px-5 text-center font-mono text-[0.55rem] leading-relaxed tracking-[0.18em] uppercase opacity-40 sm:px-8">
-            Constituent analysis
-            <span className="mx-2 opacity-50">/</span>
-            Specimen sentence
-          </p>
         </>
       )}
       panels={[
@@ -133,10 +143,10 @@ export function ElaPageV3() {
         {
           key: "premise",
           content: (
-            <div className="mx-auto max-w-5xl">
+            <div className="mx-auto max-w-6xl">
               <SectionHead title="I. The premise" meta="On attention" />
-              <div className="mt-10 grid gap-8 text-[0.95rem] leading-relaxed opacity-75 sm:grid-cols-2 sm:gap-12">
-                <p className="first-letter:float-left first-letter:mr-2.5 first-letter:font-[family-name:var(--font-editorial)] first-letter:text-[3.4rem] first-letter:leading-[0.72]">
+              <div className="v3-body mt-10 grid gap-8 opacity-75 sm:grid-cols-2 sm:gap-12">
+                <p className="first-letter:float-left first-letter:mr-2.5 first-letter:font-[family-name:var(--font-editorial)] first-letter:text-[5.1rem] first-letter:leading-[0.72]">
                   Close reading is not slow reading. It is reading with the
                   question &ldquo;why this way and not another&rdquo; held open
                   the whole time — why this word, this order, this length of
@@ -156,7 +166,7 @@ export function ElaPageV3() {
         {
           key: "ladder",
           content: (
-            <div className="mx-auto max-w-5xl">
+            <div className="mx-auto max-w-6xl">
               <SectionHead title="II. The ladder" meta="Six rungs" />
               <ul>
                 {LADDER.map((rung) => (
@@ -164,13 +174,13 @@ export function ElaPageV3() {
                     key={rung.numeral}
                     className="grid grid-cols-[2rem_1fr] items-baseline gap-x-4 border-b border-current/12 py-4 sm:grid-cols-[3.5rem_1fr_auto] sm:gap-x-8 sm:py-5"
                   >
-                    <span className="font-mono text-[0.62rem] tracking-[0.16em] opacity-40">
+                    <span className="v3-micro font-mono opacity-55">
                       {rung.numeral}
                     </span>
-                    <span className="font-[family-name:var(--font-editorial)] text-[1.5rem] leading-none tracking-tight sm:text-[2.1rem]">
+                    <span className="font-[family-name:var(--font-editorial)] text-[2.625rem] leading-none tracking-tight sm:text-[3.45rem]">
                       {rung.name}
                     </span>
-                    <span className="col-start-2 mt-1.5 font-mono text-[0.58rem] tracking-[0.1em] uppercase opacity-50 sm:col-start-3 sm:mt-0 sm:text-right">
+                    <span className="v3-micro col-start-2 mt-1.5 font-mono uppercase opacity-60 sm:col-start-3 sm:mt-0 sm:text-right">
                       {rung.note}
                     </span>
                   </li>
@@ -182,9 +192,9 @@ export function ElaPageV3() {
         {
           key: "lineage",
           content: (
-            <div className="mx-auto max-w-5xl">
+            <div className="mx-auto max-w-6xl">
               <SectionHead title="III. The lineage" meta="Trivium" />
-              <p className="mt-8 max-w-2xl text-[0.95rem] leading-relaxed opacity-75">
+              <p className="v3-body mt-8 max-w-2xl opacity-75">
                 Before the mathematical arts came the verbal ones, and they were
                 counted as three: how a thing is said, whether it follows, and
                 what it does to the person hearing it. Every essay a student
@@ -193,13 +203,13 @@ export function ElaPageV3() {
               <div className="mt-8 grid grid-cols-1 gap-px overflow-hidden border border-current/12 sm:mt-10 sm:grid-cols-3">
                 {TRIVIUM.map((art) => (
                   <div key={art.latin} className="bg-current/[0.02] p-4 sm:p-6">
-                    <p className="font-mono text-[0.52rem] tracking-[0.2em] uppercase opacity-40">
+                    <p className="v3-micro font-mono uppercase opacity-55">
                       {art.english}
                     </p>
-                    <p className="mt-3 font-[family-name:var(--font-editorial)] text-[1.5rem] leading-none tracking-tight italic">
+                    <p className="mt-3 font-[family-name:var(--font-editorial)] text-[2.7rem] leading-none tracking-tight italic">
                       {art.latin}
                     </p>
-                    <p className="mt-3 font-mono text-[0.55rem] tracking-[0.1em] uppercase opacity-50">
+                    <p className="v3-micro mt-3 font-mono uppercase opacity-60">
                       {art.note}
                     </p>
                   </div>
@@ -213,10 +223,10 @@ export function ElaPageV3() {
           invert: true,
           content: (
             <div className="mx-auto max-w-3xl text-center">
-              <p className="font-mono text-[0.58rem] tracking-[0.26em] uppercase opacity-50">
+              <p className="v3-label font-mono uppercase opacity-60">
                 Axiom
               </p>
-              <blockquote className="mt-8 font-[family-name:var(--font-editorial)] text-[clamp(1.8rem,5vw,3.2rem)] leading-[1.14] tracking-tight text-balance">
+              <blockquote className="mt-8 font-[family-name:var(--font-editorial)] text-[clamp(2.7rem,7.5vw,4.8rem)] leading-[1.14] tracking-tight text-balance">
                 A sentence you cannot take apart is a sentence you do not yet
                 <span className="italic" style={{ color: ACCENT }}>
                   {" "}
@@ -232,20 +242,20 @@ export function ElaPageV3() {
           last: true,
           content: (
             <div className="mx-auto max-w-3xl text-center">
-              <p className="font-mono text-[0.58rem] tracking-[0.26em] uppercase opacity-50">
+              <p className="v3-label font-mono uppercase opacity-60">
                 Now enrolling — 2026 sessions
               </p>
-              <h2 className="mx-auto mt-7 max-w-2xl font-[family-name:var(--font-editorial)] text-[clamp(2.2rem,7vw,4.4rem)] leading-[0.95] tracking-[-0.02em] text-balance">
+              <h2 className="mx-auto mt-7 max-w-2xl font-[family-name:var(--font-editorial)] text-[clamp(3.3rem,10.5vw,6.6rem)] leading-[0.95] tracking-[-0.02em] text-balance">
                 Bring us a paragraph.
               </h2>
-              <p className="mx-auto mt-6 max-w-md text-[0.92rem] leading-relaxed text-balance opacity-70">
+              <p className="v3-body mx-auto mt-6 max-w-md text-balance opacity-70">
                 Send something your student has written — anything. We will read
                 it closely and tell you what we see.
               </p>
               <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
                 <a
                   href={ENQUIRE}
-                  className="group inline-flex items-center gap-2.5 rounded-full px-6 py-3 font-mono text-[0.66rem] tracking-[0.16em] uppercase"
+                  className="v3-label group inline-flex items-center gap-2.5 rounded-full px-7 py-4 font-mono uppercase"
                   style={{ backgroundColor: INK, color: PAPER }}
                 >
                   Enquire
@@ -255,7 +265,7 @@ export function ElaPageV3() {
                 </a>
                 <Link
                   href="/v3/courses"
-                  className="inline-flex items-center rounded-full border border-current/25 px-6 py-3 font-mono text-[0.66rem] tracking-[0.16em] uppercase transition-colors hover:border-current/60"
+                  className="v3-label inline-flex items-center rounded-full border border-current/25 px-7 py-4 font-mono uppercase transition-colors hover:border-current/60"
                 >
                   Other courses
                 </Link>

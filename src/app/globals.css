@@ -168,6 +168,59 @@
   opacity: var(--v3-grain-opacity);
 }
 
+/* ── /v3 type scale ─────────────────────────────────────────────────────────
+   The subject pages were drawn with the small type of a printed plate — mono
+   captions at 8px, body copy at 14px. On paper that reads; on a screen, to an
+   audience that skews older, it does not. Legibility beats the reference.
+
+   The sizes live here rather than as arbitrary values scattered across five
+   components so that "make it bigger" stays a single edit. Three roles:
+
+     .v3-micro   plate numbers, section meta, footer rules — the smallest thing
+                 on the page, and still 12px rather than 8px
+     .v3-label   nav, buttons, anything a visitor has to act on
+     .v3-body    running prose
+
+   Letter-spacing shrinks as the size grows: the wide tracking that makes 8px
+   uppercase legible turns into gaps at 14px. Line-height on the body class is
+   generous for the same reason the size went up — older eyes lose the line
+   return first, and leading is what prevents that.
+
+   These sit in the utilities layer so they rank alongside the Tailwind type
+   utilities rather than above everything. The corollary is that stacking a
+   text-* or tracking-* utility on an element that already carries one of these
+   does nothing — pick one or the other. */
+@layer utilities {
+  .v3-micro {
+    font-size: 1.21875rem;
+    letter-spacing: 0.1em;
+    line-height: 1.45;
+  }
+
+  .v3-label {
+    font-size: 1.40625rem;
+    letter-spacing: 0.08em;
+    line-height: 1.4;
+  }
+
+  .v3-body {
+    font-size: 1.78125rem;
+    line-height: 1.6;
+  }
+
+  @media (min-width: 640px) {
+    .v3-micro {
+      font-size: 1.3125rem;
+    }
+    .v3-label {
+      font-size: 1.5rem;
+    }
+    .v3-body {
+      font-size: 1.96875rem;
+    }
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -256,12 +309,6 @@
 .v3-stage-fade {
   opacity: calc(1 - var(--p, 0) / 0.5);
   transform: translateY(calc(var(--p, 0) * -14px));
-}
-
-/* The call to action underneath, uncovered as the plate empties. */
-.v3-stage-reveal {
-  opacity: calc((var(--p, 0) - 0.5) / 0.4);
-  transform: translateY(calc((1 - var(--p, 0)) * 16px));
 }
 
 /* A content panel is keyed to its own index via --i: it fades up as progress
@@ -363,6 +410,119 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .omr-fill {
+    animation: none;
+  }
+}
+
+/* ── Computer Science hero: a CRT terminal ──────────────────────────────────
+   The listing types itself in line by line. clip-path with steps() gives the
+   character-by-character reveal of a terminal echoing input, rather than the
+   fade the other heroes use — a screen does not fade text in, it prints it.
+
+   The settled state is set on the class itself (a fully drawn line) instead of
+   being left to the natural style, because `clip-path: none` cannot interpolate
+   with an inset(): the animation needs a real value at both ends. */
+.crt-line {
+  clip-path: inset(0 0 0 0);
+  animation: crt-type 0.42s steps(22, end) calc(0.25s + var(--i, 0) * 0.11s)
+    both;
+}
+@keyframes crt-type {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+}
+
+/* Phosphor bloom. currentColor, so it glows in whichever skin the screen took
+   rather than assuming green-on-black. */
+.crt-screen {
+  text-shadow: 0 0 0.35em color-mix(in oklab, currentColor 45%, transparent);
+}
+
+/* Scanlines — one dark band per two pixels, the classic interlace artefact. */
+.crt-scanlines {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    color-mix(in oklab, var(--v3-paper) 55%, transparent) 0px,
+    color-mix(in oklab, var(--v3-paper) 55%, transparent) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  opacity: 0.5;
+}
+
+/* Curvature, as corner falloff. A real tube is darkest at the corners because
+   the glass is thickest and furthest from the gun. */
+.crt-vignette {
+  background: radial-gradient(
+    ellipse at center,
+    transparent 55%,
+    color-mix(in oklab, var(--v3-paper) 75%, transparent) 100%
+  );
+}
+
+/* The bezel's own shadow: the shell stands off the page, and the screen is
+   recessed into it. */
+.crt-bezel {
+  box-shadow:
+    0 30px 70px -30px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  outline: 1px solid color-mix(in oklab, var(--v3-ink) 12%, transparent);
+}
+
+/* Power lamp, breathing rather than blinking — a lamp is lit, not flashing. */
+.crt-lamp {
+  animation: crt-lamp-pulse 3.2s ease-in-out infinite;
+}
+@keyframes crt-lamp-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* The board behind the terminal: traces draw themselves along their own length,
+   staggered, like a router laying them down.
+
+   The paths carry pathLength="1" as an SVG attribute, which renormalises their
+   geometry so a single dasharray of 1 covers every trace exactly — without it
+   each path would need its own measured length. */
+.circuit-trace {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  animation: circuit-draw 1.1s ease-out calc(0.2s + var(--i, 0) * 0.09s) both;
+}
+@keyframes circuit-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+}
+
+/* Vias land once the trace reaching them has been drawn. */
+.circuit-via {
+  animation: circuit-via-in 0.3s ease-out calc(0.9s + var(--i, 0) * 0.09s) both;
+}
+@keyframes circuit-via-in {
+  from {
+    opacity: 0;
+    transform: scale(0.3);
+    transform-origin: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .crt-line {
+    animation: none;
+  }
+  .crt-lamp {
+    animation: none;
+    opacity: 0.8;
+  }
+  .circuit-trace,
+  .circuit-via {
     animation: none;
   }
 }

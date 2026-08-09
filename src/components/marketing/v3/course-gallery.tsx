@@ -66,6 +66,15 @@ const COURSES: Course[] = [
     caption:
       "Coursework support that rebuilds from the idea underneath the gap — so the next chapter has something to stand on instead of another memorized rule.",
   },
+  {
+    code: "04",
+    name: "Computing",
+    title: "Computer Science",
+    note: "C++ · Systems · AI-paired",
+    href: "/v3/courses/cs",
+    caption:
+      "Taught downward before fast: years of C++ written by hand, close enough to the machine to build real judgement — and only then Claude and GPT, as tools to direct and audit rather than lean on.",
+  },
 ];
 
 /** Enquiry mailto for a course that has no page of its own yet. */
@@ -73,6 +82,18 @@ function enquiryHref(name: string) {
   return `mailto:hello@boroughprep.com?subject=${encodeURIComponent(
     `${name} tutoring enquiry`
   )}`;
+}
+
+/**
+ * Straight to the booking panel of a course's page.
+ *
+ * The subject pages open on their hero and reach booking one section later;
+ * `#book` matches the section named "Book" in their section list and the page
+ * opens there instead (see subject-page.tsx). A course with no page of its own
+ * still falls back to an enquiry.
+ */
+function bookHref(course: Course) {
+  return course.href ? `${course.href}#book` : enquiryHref(course.name);
 }
 
 /** Even fan: outermost cards tilt most, and lower cards sit slightly deeper. */
@@ -125,10 +146,24 @@ export function CourseGallery() {
         </div>
       ))}
 
-      {/* ── The fan ── */}
-      <div className="relative flex items-center justify-center px-4 pt-6 pb-2">
+      {/* ── The fan ──
+          Each course is a column: the plate on top, its own booking button
+          underneath. The plates are fanned by a transform, which takes no part
+          in layout, so the buttons below them sit in a straight row while the
+          plates above still splay.
+
+          The columns do not overlap — each one owns a button, and overlapping
+          columns would stack those on top of each other.
+
+          Four plates at a readable size do not fit one row until about 1280px,
+          so the gallery wraps to 2×2 and only opens out at xl. The alternative
+          was shrinking every plate to about 14rem to force a single row at lg,
+          which would have made the plates smaller than they were with three.
+          The max-widths are what pin the wrap to 2-up: two columns plus one gap
+          at each step. */}
+      <div className="relative flex items-start justify-center gap-2 px-4 pt-6 pb-2 sm:gap-3 lg:gap-5">
         <div
-          className="flex items-center justify-center"
+          className="flex max-w-[14.25rem] flex-wrap items-start justify-center gap-x-2 gap-y-8 sm:max-w-[23rem] sm:gap-x-3 md:max-w-[29rem] lg:max-w-[40.5rem] lg:gap-x-5 xl:max-w-none"
           style={{ perspective: "1600px" }}
         >
           {COURSES.map((course, i) => {
@@ -150,14 +185,8 @@ export function CourseGallery() {
               // the cards, which slid a *different* card under a stationary
               // cursor, fired its mouseenter, and let selection ping-pong.
               // Keeping the hit areas still makes hovering predictable.
-              //
-              // Four cards must fit the viewport at every width, so they overlap
-              // heavily on phones and only separate once there's room.
               className:
-                "group relative -mx-3.5 block w-[6.5rem] shrink-0 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--v3-accent)] sm:-mx-1 sm:w-[9.5rem] lg:mx-1 lg:w-[13rem]",
-              style: {
-                zIndex: isSelected ? 30 : 10 - Math.abs(i - selected),
-              },
+                "group relative block w-full cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--v3-accent)]",
             };
 
             const face = (
@@ -185,10 +214,10 @@ export function CourseGallery() {
                     }`,
                   }}
                 >
-                  <div className="flex items-start justify-between font-mono text-[0.55rem] tracking-[0.18em] uppercase opacity-60">
+                  <div className="flex items-start justify-between font-mono text-[0.7rem] tracking-[0.16em] uppercase opacity-60 lg:text-[0.85rem]">
                     <span>{course.code}</span>
                     <span
-                      className="size-1.5 rounded-full transition-opacity"
+                      className="size-2 rounded-full transition-opacity lg:size-2.5"
                       style={{
                         backgroundColor: ACCENT,
                         opacity: isSelected ? 1 : 0,
@@ -199,7 +228,7 @@ export function CourseGallery() {
                   {/* Halftone band — the printed texture of the plate. */}
                   <div
                     aria-hidden
-                    className="my-2 h-10 w-full lg:my-3 lg:h-16"
+                    className="my-2 h-14 w-full lg:my-4 lg:h-24"
                     style={{
                       backgroundImage: `radial-gradient(${
                         isSelected ? PAPER : INK
@@ -213,11 +242,16 @@ export function CourseGallery() {
                     }}
                   />
 
+                  {/* The plate face does not take the page's type scale. A
+                      phone fits three plates at about 7rem each, and 21px
+                      display type overruns "Testing" at that width — so this
+                      steps up hard where there is room and stays modest where
+                      there is not. */}
                   <div>
-                    <p className="font-[family-name:var(--font-editorial)] text-[1.45rem] leading-none tracking-tight sm:text-[2rem] lg:text-[2.7rem]">
+                    <p className="font-[family-name:var(--font-editorial)] text-[1.6rem] leading-none tracking-tight sm:text-[2.4rem] lg:text-[4rem]">
                       {course.name}
                     </p>
-                    <p className="mt-1.5 font-mono text-[0.5rem] leading-snug tracking-[0.1em] uppercase opacity-60 lg:mt-2.5 lg:text-[0.58rem]">
+                    <p className="mt-1.5 font-mono text-[0.65rem] leading-snug tracking-[0.1em] uppercase opacity-60 lg:mt-3 lg:text-[0.85rem]">
                       {course.note}
                     </p>
                   </div>
@@ -227,14 +261,52 @@ export function CourseGallery() {
 
             // Courses with a page of their own navigate there; the rest open an
             // enquiry until their page exists.
-            return course.href ? (
-              <Link key={course.code} href={course.href} {...cardProps}>
+            const plate = course.href ? (
+              <Link href={course.href} {...cardProps}>
                 {face}
               </Link>
             ) : (
-              <a key={course.code} href={enquiryHref(course.name)} {...cardProps}>
+              <a href={enquiryHref(course.name)} {...cardProps}>
                 {face}
               </a>
+            );
+
+            return (
+              <div
+                key={course.code}
+                onMouseEnter={() => setSelected(i)}
+                className="flex w-[6.75rem] shrink-0 flex-col sm:w-[11rem] md:w-[14rem] lg:w-[19.5rem] xl:w-[18rem]"
+                style={{ zIndex: isSelected ? 30 : 10 - Math.abs(i - selected) }}
+              >
+                {plate}
+
+                {/* Booking, straight from the gallery. The plate itself opens
+                    the course page for someone still deciding; this is for
+                    someone who has already decided, and it should not cost them
+                    a page of reading to find. Accent-filled so it reads as the
+                    action on a page otherwise drawn entirely in ink.
+
+                    The plates above are fanned by a transform, which does not
+                    affect layout, so these stay in a level row. */}
+                <Link
+                  href={bookHref(course)}
+                  onFocus={() => setSelected(i)}
+                  // py-4 at every width, not just from sm: a phone plate is
+                  // only 6.75rem wide, and the tighter padding put the button
+                  // at 35px tall — under the 44px a thumb needs.
+                  className="group mt-5 flex items-center justify-center gap-2 rounded-full px-3 py-4 text-center font-mono text-[0.7rem] leading-none tracking-[0.12em] uppercase transition-transform duration-200 hover:scale-[1.03] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--v3-accent)] sm:gap-2.5 sm:px-4 sm:text-[0.9rem] lg:mt-7 lg:text-[1.1rem]"
+                  style={{ backgroundColor: ACCENT, color: PAPER }}
+                >
+                  {/* Literal space: JSX drops the whitespace between elements
+                      on separate lines, which ran this together as
+                      "BookTesting" — and the gap here is a word break, not a
+                      margin, so it has to survive into the text. */}
+                  Book<span className="hidden sm:inline">&nbsp;{course.name}</span>
+                  <span className="inline-block transition-transform duration-300 group-hover:translate-x-1">
+                    &rarr;
+                  </span>
+                </Link>
+              </div>
             );
           })}
         </div>
@@ -246,9 +318,9 @@ export function CourseGallery() {
           politely because tabbing between cards changes it. */}
       <div
         aria-live="polite"
-        className="relative mx-auto mt-8 w-full max-w-xl px-5 text-center"
+        className="relative mx-auto mt-8 w-full max-w-3xl px-5 text-center"
       >
-        <p className="font-mono text-[0.58rem] tracking-[0.22em] uppercase opacity-45">
+        <p className="v3-micro font-mono uppercase opacity-55">
           Plate {active.code} — {active.title ?? active.name}
         </p>
         <div className="mt-3">
@@ -265,7 +337,7 @@ export function CourseGallery() {
         {active.href ? (
           <Link
             href={active.href}
-            className="group inline-flex items-center gap-2.5 rounded-full px-6 py-3 font-mono text-[0.66rem] tracking-[0.16em] uppercase"
+            className="v3-label group inline-flex items-center gap-2.5 rounded-full px-7 py-4 font-mono uppercase"
             style={{ backgroundColor: INK, color: PAPER }}
           >
             Explore {active.name}
@@ -276,7 +348,7 @@ export function CourseGallery() {
         ) : (
           <a
             href={enquiryHref(active.name)}
-            className="group inline-flex items-center gap-2.5 rounded-full px-6 py-3 font-mono text-[0.66rem] tracking-[0.16em] uppercase"
+            className="v3-label group inline-flex items-center gap-2.5 rounded-full px-7 py-4 font-mono uppercase"
             style={{ backgroundColor: INK, color: PAPER }}
           >
             Get started
@@ -287,7 +359,7 @@ export function CourseGallery() {
         )}
         <a
           href="mailto:hello@boroughprep.com"
-          className="inline-flex items-center rounded-full border border-current/25 px-6 py-3 font-mono text-[0.66rem] tracking-[0.16em] uppercase transition-colors hover:border-current/60"
+          className="v3-label inline-flex items-center rounded-full border border-current/25 px-7 py-4 font-mono uppercase transition-colors hover:border-current/60"
         >
           Ask a question
         </a>

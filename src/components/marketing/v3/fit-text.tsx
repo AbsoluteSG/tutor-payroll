@@ -23,8 +23,12 @@ type FitTextProps = {
 
 export function FitText({
   children,
-  maxFontPx = 15.5,
-  minFontPx = 10.5,
+  // Scaled with the rest of the /v3 type. The floor matters as much as the
+  // ceiling here: this box shrinks text until it fits, so too low a floor
+  // quietly undoes the larger scale for whichever caption happens to be
+  // longest.
+  maxFontPx = 23.5,
+  minFontPx = 17,
   className = "",
 }: FitTextProps) {
   const boxRef = useRef<HTMLDivElement>(null);
@@ -61,7 +65,7 @@ export function FitText({
   return (
     <div
       ref={boxRef}
-      className="flex h-[7.5rem] w-full items-start justify-center overflow-hidden sm:h-[6rem]"
+      className="flex h-[11rem] w-full items-start justify-center overflow-hidden sm:h-[9rem]"
     >
       <p ref={textRef} className={className} style={{ lineHeight: 1.65 }}>
         {children}

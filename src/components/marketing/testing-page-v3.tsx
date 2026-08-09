@@ -40,10 +40,26 @@ const TRACKS = [
   { name: "Diagnostic only", note: "One sitting" },
 ];
 
+/** PLACEHOLDER credentials — see the warning in v3/booking-panel.tsx. */
 const TUTORS = [
-  { initials: "JC", name: "Julian C.", focus: "SHSAT" },
-  { initials: "PE", name: "Priya E.", focus: "SAT math" },
-  { initials: "NB", name: "Nadia B.", focus: "SAT reading & writing" },
+  {
+    initials: "JC",
+    name: "Julian C.",
+    focus: "SHSAT",
+    credentials: ["B.S. Applied Math, Cooper Union", "10 years SHSAT preparation", "Stuyvesant graduate"],
+  },
+  {
+    initials: "PE",
+    name: "Priya E.",
+    focus: "SAT math",
+    credentials: ["B.A. Physics, Barnard", "800 SAT Math", "6 years digital SAT"],
+  },
+  {
+    initials: "NB",
+    name: "Nadia B.",
+    focus: "SAT reading & writing",
+    credentials: ["M.A. Linguistics, Columbia", "790 SAT Reading & Writing", "9 years exam coaching"],
+  },
 ];
 
 const EXAMS = [
@@ -77,11 +93,11 @@ export function TestingPageV3() {
       hero={(locked) => (
         <>
           <div className="v3-stage-fade relative z-10 px-5 sm:px-8">
-            <div className="mx-auto max-w-5xl text-center">
-              <p className="font-mono text-[0.62rem] tracking-[0.28em] uppercase opacity-55">
+            <div className="mx-auto max-w-6xl text-center">
+              <p className="v3-label font-mono uppercase opacity-60">
                 Specialized Testing
               </p>
-              <h1 className="mx-auto mt-6 max-w-3xl font-[family-name:var(--font-editorial)] text-[clamp(2.2rem,6.4vw,4.6rem)] leading-[0.98] tracking-[-0.02em] text-balance">
+              <h1 className="mx-auto mt-6 max-w-3xl font-[family-name:var(--font-editorial)] text-[clamp(3.3rem,9.6vw,6.9rem)] leading-[0.98] tracking-[-0.02em] text-balance">
                 A standardized test is a
                 <br />
                 <span className="relative inline-block italic">
@@ -106,12 +122,6 @@ export function TestingPageV3() {
           >
             <AnswerSheet />
           </div>
-
-          <p className="v3-stage-fade relative z-10 mt-6 px-5 text-center font-mono text-[0.55rem] leading-relaxed tracking-[0.18em] uppercase opacity-40 sm:px-8">
-            SHSAT &amp; Digital SAT
-            <span className="mx-2 opacity-50">/</span>
-            Specimen answer sheet
-          </p>
         </>
       )}
       panels={[
@@ -130,10 +140,10 @@ export function TestingPageV3() {
         {
           key: "premise",
           content: (
-            <div className="mx-auto max-w-5xl">
+            <div className="mx-auto max-w-6xl">
               <SectionHead title="I. The premise" meta="On patterns" />
-              <div className="mt-10 grid gap-8 text-[0.95rem] leading-relaxed opacity-75 sm:grid-cols-2 sm:gap-12">
-                <p className="first-letter:float-left first-letter:mr-2.5 first-letter:font-[family-name:var(--font-editorial)] first-letter:text-[3.4rem] first-letter:leading-[0.72]">
+              <div className="v3-body mt-10 grid gap-8 opacity-75 sm:grid-cols-2 sm:gap-12">
+                <p className="first-letter:float-left first-letter:mr-2.5 first-letter:font-[family-name:var(--font-editorial)] first-letter:text-[5.1rem] first-letter:leading-[0.72]">
                   A standardized test has to be standardized. It is written to a
                   specification, reused year after year, and scored by machine —
                   which means it cannot surprise anyone, and the same few dozen
@@ -153,23 +163,23 @@ export function TestingPageV3() {
         {
           key: "exams",
           content: (
-            <div className="mx-auto max-w-5xl">
+            <div className="mx-auto max-w-6xl">
               <SectionHead title="II. The exams" meta="Two instruments" />
               <div className="mt-8 grid gap-px overflow-hidden border border-current/12 sm:mt-10 sm:grid-cols-2">
                 {EXAMS.map((exam) => (
                   <div key={exam.code} className="bg-current/[0.02] p-5 sm:p-7">
                     <div className="flex items-baseline justify-between gap-3">
-                      <p className="font-[family-name:var(--font-editorial)] text-[2rem] leading-none tracking-tight sm:text-[2.6rem]">
+                      <p className="font-[family-name:var(--font-editorial)] text-[3rem] leading-none tracking-tight sm:text-[3.9rem]">
                         {exam.code}
                       </p>
-                      <p className="text-right font-mono text-[0.5rem] tracking-[0.14em] uppercase opacity-45">
+                      <p className="v3-micro text-right font-mono uppercase opacity-55">
                         {exam.when}
                       </p>
                     </div>
-                    <p className="mt-3 font-mono text-[0.52rem] tracking-[0.16em] uppercase opacity-45">
+                    <p className="v3-micro mt-3 font-mono uppercase opacity-55">
                       {exam.full}
                     </p>
-                    <p className="mt-4 text-[0.88rem] leading-relaxed opacity-75">
+                    <p className="v3-body mt-4 opacity-75">
                       {exam.note}
                     </p>
                   </div>
@@ -181,9 +191,9 @@ export function TestingPageV3() {
         {
           key: "sequence",
           content: (
-            <div className="mx-auto max-w-5xl">
+            <div className="mx-auto max-w-6xl">
               <SectionHead title="III. The sequence" meta="Four stages" />
-              <p className="mt-8 max-w-2xl text-[0.95rem] leading-relaxed opacity-75">
+              <p className="v3-body mt-8 max-w-2xl opacity-75">
                 Every student runs the same four stages, however long they have.
                 The order matters more than the hours: there is no point drilling
                 a section before knowing whether it is the one losing the points.
@@ -191,13 +201,13 @@ export function TestingPageV3() {
               <div className="mt-8 grid grid-cols-2 gap-px overflow-hidden border border-current/12 sm:mt-10 sm:grid-cols-4">
                 {SEQUENCE.map((stage) => (
                   <div key={stage.step} className="bg-current/[0.02] p-4 sm:p-6">
-                    <p className="font-mono text-[0.52rem] tracking-[0.2em] uppercase opacity-40">
+                    <p className="v3-micro font-mono uppercase opacity-55">
                       {stage.step}
                     </p>
-                    <p className="mt-3 font-[family-name:var(--font-editorial)] text-[1.5rem] leading-none tracking-tight italic">
+                    <p className="mt-3 font-[family-name:var(--font-editorial)] text-[2.7rem] leading-none tracking-tight italic">
                       {stage.name}
                     </p>
-                    <p className="mt-3 font-mono text-[0.55rem] tracking-[0.1em] uppercase opacity-50">
+                    <p className="v3-micro mt-3 font-mono uppercase opacity-60">
                       {stage.note}
                     </p>
                   </div>
@@ -211,10 +221,10 @@ export function TestingPageV3() {
           invert: true,
           content: (
             <div className="mx-auto max-w-3xl text-center">
-              <p className="font-mono text-[0.58rem] tracking-[0.26em] uppercase opacity-50">
+              <p className="v3-label font-mono uppercase opacity-60">
                 Axiom
               </p>
-              <blockquote className="mt-8 font-[family-name:var(--font-editorial)] text-[clamp(1.8rem,5vw,3.2rem)] leading-[1.14] tracking-tight text-balance">
+              <blockquote className="mt-8 font-[family-name:var(--font-editorial)] text-[clamp(2.7rem,7.5vw,4.8rem)] leading-[1.14] tracking-tight text-balance">
                 A score measures preparation. It has never once measured a
                 <span className="italic" style={{ color: ACCENT }}>
                   {" "}
@@ -230,20 +240,20 @@ export function TestingPageV3() {
           last: true,
           content: (
             <div className="mx-auto max-w-3xl text-center">
-              <p className="font-mono text-[0.58rem] tracking-[0.26em] uppercase opacity-50">
+              <p className="v3-label font-mono uppercase opacity-60">
                 Now enrolling — 2026 sessions
               </p>
-              <h2 className="mx-auto mt-7 max-w-2xl font-[family-name:var(--font-editorial)] text-[clamp(2.2rem,7vw,4.4rem)] leading-[0.95] tracking-[-0.02em] text-balance">
+              <h2 className="mx-auto mt-7 max-w-2xl font-[family-name:var(--font-editorial)] text-[clamp(3.3rem,10.5vw,6.6rem)] leading-[0.95] tracking-[-0.02em] text-balance">
                 Start with a diagnostic.
               </h2>
-              <p className="mx-auto mt-6 max-w-md text-[0.92rem] leading-relaxed text-balance opacity-70">
+              <p className="v3-body mx-auto mt-6 max-w-md text-balance opacity-70">
                 One sitting, scored and read back to you section by section. Then
                 we will tell you what the work actually is.
               </p>
               <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
                 <a
                   href={ENQUIRE}
-                  className="group inline-flex items-center gap-2.5 rounded-full px-6 py-3 font-mono text-[0.66rem] tracking-[0.16em] uppercase"
+                  className="v3-label group inline-flex items-center gap-2.5 rounded-full px-7 py-4 font-mono uppercase"
                   style={{ backgroundColor: INK, color: PAPER }}
                 >
                   Enquire
@@ -253,7 +263,7 @@ export function TestingPageV3() {
                 </a>
                 <Link
                   href="/v3/courses"
-                  className="inline-flex items-center rounded-full border border-current/25 px-6 py-3 font-mono text-[0.66rem] tracking-[0.16em] uppercase transition-colors hover:border-current/60"
+                  className="v3-label inline-flex items-center rounded-full border border-current/25 px-7 py-4 font-mono uppercase transition-colors hover:border-current/60"
                 >
                   Other courses
                 </Link>
