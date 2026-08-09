@@ -117,6 +117,57 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* ── The /v3 marketing surface: paper and ink ──────────────────────────────
+   These pages are an editorial print system rather than the app's token set, so
+   they carry their own small palette. Two skins exist — paper (light ground,
+   ink type) and ink (the reverse) — and a surface picks one:
+
+     the page          takes the skin matching the active theme
+     .v3-invert        takes the other one, whatever the theme
+
+   .v3-invert is how a panel runs deliberately against its page, which is what
+   the Axiom panel on each subject page does. Expressing it as "the other skin"
+   rather than "the dark one" is what makes it survive a theme switch: in dark
+   mode that panel becomes the light one, and the contrast it was drawn for is
+   preserved either way.
+
+   --v3-accent belongs to the SKIN, not the theme: the deep red reads on paper
+   and washes out on ink, so each skin names the one that works against it.
+   Anything inside an inverted panel therefore gets the right accent for free.
+
+   Consumers reference --v3-paper / --v3-ink / --v3-accent only; the components
+   pass them through JS constants of the same name (see v3/subject-page.tsx).
+   Hairlines and washes use currentColor with an opacity modifier instead of a
+   token, so they invert along with the type without naming a colour at all. */
+:root,
+.dark .v3-invert {
+  --v3-paper: #ede9e1;
+  --v3-ink: #14110e;
+  --v3-accent: #d6432b;
+  /* Cards and wells: a shade off the ground, never a different hue. */
+  --v3-card: #f7f5f0;
+  /* Grain is printed INTO paper and shines back OFF ink. */
+  --v3-grain-blend: multiply;
+  --v3-grain-opacity: 0.16;
+}
+
+.dark,
+.v3-invert {
+  --v3-paper: #14110e;
+  --v3-ink: #ede9e1;
+  --v3-accent: #e8765f;
+  --v3-card: #1e1a16;
+  --v3-grain-blend: screen;
+  /* Screen over near-black is far more assertive than multiply over paper, so
+     the same 0.16 would read as television static rather than tooth. */
+  --v3-grain-opacity: 0.07;
+}
+
+.v3-grain {
+  mix-blend-mode: var(--v3-grain-blend);
+  opacity: var(--v3-grain-opacity);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -250,24 +301,93 @@
 }
 
 /* ELA hero: a sentence performing its own close reading. Each mark — a bracket
-   and its grammatical label — draws outward from its centre as progress
-   advances, staggered by --i so the sentence comes apart one constituent at a
-   time. --t is the mark's own 0..1 progress, defined once on the mark and read
-   by its children. */
+   and its grammatical label — draws outward from its centre, staggered by --i so
+   the sentence comes apart one constituent at a time.
+
+   This runs once on load rather than being scrubbed by --p. The analysis IS the
+   hero: gating it behind scrolling meant the page's whole argument was invisible
+   until the visitor happened to scroll, and a visitor who didn't never saw it.
+
+   Following the [data-reveal] pattern above, the keyframes define only `from`,
+   so the settled state is the element's natural style — which is what reduced
+   motion and no-JS both fall back to, fully drawn. --delay is declared once on
+   the mark and inherited by its two children so all three stay in step. */
 .ela-mark {
-  --t: max(0, min(1, calc((var(--p, 0) - var(--i, 0) * 0.14 - 0.04) / 0.26)));
-  opacity: var(--t);
+  --delay: calc(0.4s + var(--i, 0) * 0.13s);
+  animation: ela-mark-in 0.45s ease-out var(--delay) both;
 }
 .ela-mark-rule {
-  transform: scaleX(var(--t));
   transform-origin: center;
+  animation: ela-rule-in 0.45s ease-out var(--delay) both;
 }
 .ela-mark-label {
-  transform: translateY(calc((1 - var(--t)) * 6px));
+  animation: ela-label-in 0.45s ease-out var(--delay) both;
 }
-/* The sentence lifts slightly to make room for the analysis beneath it. */
-.ela-sentence {
-  transform: translateY(calc(min(1, var(--p, 0)) * -0.85rem));
+@keyframes ela-mark-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes ela-rule-in {
+  from {
+    transform: scaleX(0);
+  }
+}
+@keyframes ela-label-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ela-mark,
+  .ela-mark-rule,
+  .ela-mark-label {
+    animation: none;
+  }
+}
+
+/* Specialized Testing hero: the answer sheet marking itself. Same approach as
+   the ELA marks — a one-time staggered entrance whose settled state is the
+   natural style, so the sheet is complete at rest. The per-row step is short
+   because there are two dozen of them and the sweep should read as one gesture
+   across the sheet rather than as individual marks being placed. */
+.omr-fill {
+  animation: omr-fill-in 0.3s ease-out calc(0.35s + var(--i, 0) * 0.042s) both;
+}
+@keyframes omr-fill-in {
+  from {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .omr-fill {
+    animation: none;
+  }
+}
+
+/* The subject pages' scroll hint. A slow, small travel — it has to suggest the
+   direction without competing with the hero artwork for attention. */
+@keyframes v3-scroll-nudge {
+  0%,
+  55%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.7;
+  }
+  78% {
+    transform: translateY(5px);
+    opacity: 1;
+  }
+}
+.v3-scroll-nudge {
+  animation: v3-scroll-nudge 2.4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .v3-scroll-nudge {
+    animation: none;
+  }
 }
 
 /* Used where a panel could still exceed a short viewport: it stays reachable

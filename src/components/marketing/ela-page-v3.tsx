@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { SentenceAnatomy } from "./v3/sentence-anatomy";
+import { BookingPanel } from "./v3/booking-panel";
 import {
   SubjectPage,
   SectionHead,
@@ -38,6 +39,19 @@ const LADDER = [
   { numeral: "VI", name: "Voice", note: "Style as precision that has been earned" },
 ];
 
+const TRACKS = [
+  { name: "Close reading", note: "Grades 6–12" },
+  { name: "Essay & argument", note: "Grades 8–12" },
+  { name: "Timed writing", note: "Exam-facing" },
+  { name: "Literature seminar", note: "Small group" },
+];
+
+const TUTORS = [
+  { initials: "MR", name: "Maya R.", focus: "Essay & argument" },
+  { initials: "DL", name: "Daniel L.", focus: "Close reading" },
+  { initials: "SO", name: "Sofia O.", focus: "Timed writing" },
+];
+
 const TRIVIUM = [
   {
     latin: "Grammatica",
@@ -59,9 +73,9 @@ const TRIVIUM = [
 export function ElaPageV3() {
   return (
     <SubjectPage
-      plateLabel="Plate 03 — English Language Arts"
-      sections={["Sentence", "Premise", "Ladder", "Lineage", "Axiom", "Enrol"]}
-      footerRight="Plate 03 — English Language Arts"
+      plateLabel="Plate 02 — English Language Arts"
+      sections={["Sentence", "Book", "Premise", "Ladder", "Lineage", "Axiom", "Enrol"]}
+      footerRight="Plate 02 — English Language Arts"
       hero={(locked) => (
         <>
           <div className="v3-stage-fade relative z-10 px-5 sm:px-8">
@@ -105,6 +119,18 @@ export function ElaPageV3() {
       )}
       panels={[
         {
+          key: "book",
+          content: (
+            <BookingPanel
+              subject="English Language Arts"
+              heading="Book a session"
+              blurb="Pick the strand your student needs and the tutor you'd like them to work with. We'll come back with times."
+              tracks={TRACKS}
+              tutors={TUTORS}
+            />
+          ),
+        },
+        {
           key: "premise",
           content: (
             <div className="mx-auto max-w-5xl">
@@ -136,7 +162,7 @@ export function ElaPageV3() {
                 {LADDER.map((rung) => (
                   <li
                     key={rung.numeral}
-                    className="grid grid-cols-[2rem_1fr] items-baseline gap-x-4 border-b border-[#14110E]/12 py-4 sm:grid-cols-[3.5rem_1fr_auto] sm:gap-x-8 sm:py-5"
+                    className="grid grid-cols-[2rem_1fr] items-baseline gap-x-4 border-b border-current/12 py-4 sm:grid-cols-[3.5rem_1fr_auto] sm:gap-x-8 sm:py-5"
                   >
                     <span className="font-mono text-[0.62rem] tracking-[0.16em] opacity-40">
                       {rung.numeral}
@@ -164,9 +190,9 @@ export function ElaPageV3() {
                 what it does to the person hearing it. Every essay a student
                 writes is all three at once. We teach them as such.
               </p>
-              <div className="mt-8 grid grid-cols-1 gap-px overflow-hidden border border-[#14110E]/12 sm:mt-10 sm:grid-cols-3">
+              <div className="mt-8 grid grid-cols-1 gap-px overflow-hidden border border-current/12 sm:mt-10 sm:grid-cols-3">
                 {TRIVIUM.map((art) => (
-                  <div key={art.latin} className="bg-[#14110E]/[0.02] p-4 sm:p-6">
+                  <div key={art.latin} className="bg-current/[0.02] p-4 sm:p-6">
                     <p className="font-mono text-[0.52rem] tracking-[0.2em] uppercase opacity-40">
                       {art.english}
                     </p>
@@ -184,7 +210,7 @@ export function ElaPageV3() {
         },
         {
           key: "axiom",
-          dark: true,
+          invert: true,
           content: (
             <div className="mx-auto max-w-3xl text-center">
               <p className="font-mono text-[0.58rem] tracking-[0.26em] uppercase opacity-50">
@@ -192,7 +218,7 @@ export function ElaPageV3() {
               </p>
               <blockquote className="mt-8 font-[family-name:var(--font-editorial)] text-[clamp(1.8rem,5vw,3.2rem)] leading-[1.14] tracking-tight text-balance">
                 A sentence you cannot take apart is a sentence you do not yet
-                <span className="italic" style={{ color: "#E8765F" }}>
+                <span className="italic" style={{ color: ACCENT }}>
                   {" "}
                   own
                 </span>
@@ -229,7 +255,7 @@ export function ElaPageV3() {
                 </a>
                 <Link
                   href="/v3/courses"
-                  className="inline-flex items-center rounded-full border border-[#14110E]/25 px-6 py-3 font-mono text-[0.66rem] tracking-[0.16em] uppercase transition-colors hover:border-[#14110E]/60"
+                  className="inline-flex items-center rounded-full border border-current/25 px-6 py-3 font-mono text-[0.66rem] tracking-[0.16em] uppercase transition-colors hover:border-current/60"
                 >
                   Other courses
                 </Link>

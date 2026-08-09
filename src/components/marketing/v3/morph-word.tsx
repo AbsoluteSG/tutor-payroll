@@ -74,7 +74,7 @@ export function MorphWord() {
           className={`ml-[0.04em] inline-block h-[0.62em] w-[0.05em] translate-y-[0.02em] align-baseline ${
             phase === "holding" ? "v3-caret-blink" : ""
           }`}
-          style={{ backgroundColor: "#D6432B" }}
+          style={{ backgroundColor: "var(--v3-accent)" }}
         />
       ) : null}
 
@@ -82,7 +82,7 @@ export function MorphWord() {
       <span
         aria-hidden
         className="absolute -bottom-1 left-0 h-[3px] w-full sm:-bottom-2 sm:h-[5px]"
-        style={{ backgroundColor: "#D6432B" }}
+        style={{ backgroundColor: "var(--v3-accent)" }}
       />
     </span>
   );

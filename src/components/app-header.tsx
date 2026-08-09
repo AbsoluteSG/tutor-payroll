@@ -2,6 +2,7 @@ import Link from "next/link";
 import { logoutAction } from "@/lib/actions/auth-actions";
 import { Button } from "@/components/ui/button";
 import { NavTabs } from "@/components/nav-tabs";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export function AppHeader({
   name,
@@ -27,6 +28,7 @@ export function AppHeader({
           </Link>
           <div className="ml-auto flex items-center gap-3">
             <span className="text-sm text-muted-foreground">{name}</span>
+            <ThemeToggle className="text-muted-foreground hover:bg-accent" />
             <form action={logoutAction}>
               <Button variant="outline" size="sm" type="submit">
                 Sign out

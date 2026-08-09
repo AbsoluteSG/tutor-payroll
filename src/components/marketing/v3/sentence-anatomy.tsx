@@ -3,18 +3,16 @@ import type { CSSProperties, ReactNode } from "react";
 /**
  * The ELA hero: one sentence that performs its own close reading.
  *
- * At rest it is simply a sentence. As the page's progress advances, brackets and
- * grammatical labels draw in beneath it — subject, predicate, object, and the
- * prepositional phrase nested inside the object — so the page demonstrates the
- * discipline instead of describing it. The analysis is real, not decorative:
+ * Brackets and grammatical labels draw in beneath the sentence on load — subject,
+ * predicate, object, and the prepositional phrase nested inside the object — so
+ * the page demonstrates the discipline instead of describing it, and does so
+ * before the visitor has done anything. The analysis is real, not decorative:
  * the constituents are correct, including the nesting.
  *
  * Marks are positioned relative to their own constituent, so they stay aligned
  * at any type size or line wrap without any measurement. The two tiers are
  * separated by a fixed vertical offset, which is what makes the nesting legible.
  */
-
-const RULE = "rgba(20,17,14,0.4)";
 
 /** Vertical offsets for the two tiers of analysis, below the text baseline. */
 const TIER_OFFSET = ["calc(100% + 0.55rem)", "calc(100% + 3rem)"] as const;
@@ -35,10 +33,7 @@ function Mark({
       style={{ "--i": index, top: TIER_OFFSET[tier] } as CSSProperties}
     >
       {/* Top and side borders together form the bracket. */}
-      <span
-        className="ela-mark-rule block h-[5px] w-full border-t border-r border-l"
-        style={{ borderColor: RULE }}
-      />
+      <span className="ela-mark-rule block h-[5px] w-full border-t border-r border-l border-current/40" />
       <span className="ela-mark-label mt-1.5 block text-center font-mono text-[0.5rem] leading-tight tracking-[0.16em] uppercase opacity-55 sm:text-[0.55rem]">
         {label}
       </span>
@@ -74,7 +69,7 @@ export function SentenceAnatomy() {
           `top: 100%` of their own box and land on top of the second line of
           text. Keeping one line is what makes the two-tier analysis legible, so
           the type scales down on narrow screens instead. */}
-      <p className="ela-sentence text-center font-[family-name:var(--font-editorial)] text-[clamp(0.9rem,4vw,3.5rem)] leading-[1.3] tracking-tight whitespace-nowrap">
+      <p className="text-center font-[family-name:var(--font-editorial)] text-[clamp(0.9rem,4vw,3.5rem)] leading-[1.3] tracking-tight whitespace-nowrap">
         <Constituent index={0} label="Subject">
           Every sentence
         </Constituent>{" "}

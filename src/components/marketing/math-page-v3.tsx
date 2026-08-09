@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { CreationDotField } from "./v3/creation-dot-field";
+import { BookingPanel } from "./v3/booking-panel";
 import {
   SubjectPage,
   SectionHead,
@@ -35,6 +36,19 @@ const LADDER = [
   { numeral: "VI", name: "Calculus", note: "Rates of change and accumulation, AB and BC" },
 ];
 
+const TRACKS = [
+  { name: "Pre-algebra & Algebra I", note: "Grades 6–9" },
+  { name: "Geometry", note: "Grades 8–10" },
+  { name: "Algebra II & precalculus", note: "Grades 9–11" },
+  { name: "Calculus AB / BC", note: "Grades 11–12" },
+];
+
+const TUTORS = [
+  { initials: "AV", name: "Amara V.", focus: "Calculus" },
+  { initials: "TK", name: "Theo K.", focus: "Algebra & geometry" },
+  { initials: "RN", name: "Rosa N.", focus: "Precalculus" },
+];
+
 const QUADRIVIUM = [
   { latin: "Arithmetica", english: "Number", note: "Quantity at rest" },
   { latin: "Geometria", english: "Form", note: "Magnitude at rest" },
@@ -45,9 +59,9 @@ const QUADRIVIUM = [
 export function MathPageV3() {
   return (
     <SubjectPage
-      plateLabel="Plate 04 — Mathematics"
-      sections={["Plate", "Premise", "Ladder", "Lineage", "Axiom", "Enrol"]}
-      footerRight="Plate 04 — Mathematics"
+      plateLabel="Plate 03 — Mathematics"
+      sections={["Plate", "Book", "Premise", "Ladder", "Lineage", "Axiom", "Enrol"]}
+      footerRight="Plate 03 — Mathematics"
       hero={(locked) => (
         <>
           <div className="v3-stage-fade relative z-10 px-5 sm:px-8">
@@ -130,6 +144,18 @@ export function MathPageV3() {
       )}
       panels={[
         {
+          key: "book",
+          content: (
+            <BookingPanel
+              subject="Mathematics"
+              heading="Book a session"
+              blurb="Pick the course your student is in — or the one they're about to be — and the tutor you'd like them to work with. We'll come back with times."
+              tracks={TRACKS}
+              tutors={TUTORS}
+            />
+          ),
+        },
+        {
           key: "premise",
           content: (
             <div className="mx-auto max-w-5xl">
@@ -160,7 +186,7 @@ export function MathPageV3() {
                 {LADDER.map((rung) => (
                   <li
                     key={rung.numeral}
-                    className="grid grid-cols-[2rem_1fr] items-baseline gap-x-4 border-b border-[#14110E]/12 py-4 sm:grid-cols-[3.5rem_1fr_auto] sm:gap-x-8 sm:py-5"
+                    className="grid grid-cols-[2rem_1fr] items-baseline gap-x-4 border-b border-current/12 py-4 sm:grid-cols-[3.5rem_1fr_auto] sm:gap-x-8 sm:py-5"
                   >
                     <span className="font-mono text-[0.62rem] tracking-[0.16em] opacity-40">
                       {rung.numeral}
@@ -191,9 +217,9 @@ export function MathPageV3() {
               </p>
               {/* 2x2 on phones rather than a single column, which would overrun
                   a short viewport. */}
-              <div className="mt-8 grid grid-cols-2 gap-px overflow-hidden border border-[#14110E]/12 sm:mt-10 sm:grid-cols-4">
+              <div className="mt-8 grid grid-cols-2 gap-px overflow-hidden border border-current/12 sm:mt-10 sm:grid-cols-4">
                 {QUADRIVIUM.map((art) => (
-                  <div key={art.latin} className="bg-[#14110E]/[0.02] p-4 sm:p-6">
+                  <div key={art.latin} className="bg-current/[0.02] p-4 sm:p-6">
                     <p className="font-mono text-[0.52rem] tracking-[0.2em] uppercase opacity-40">
                       {art.english}
                     </p>
@@ -211,7 +237,7 @@ export function MathPageV3() {
         },
         {
           key: "axiom",
-          dark: true,
+          invert: true,
           content: (
             <div className="mx-auto max-w-3xl text-center">
               <p className="font-mono text-[0.58rem] tracking-[0.26em] uppercase opacity-50">
@@ -219,7 +245,7 @@ export function MathPageV3() {
               </p>
               <blockquote className="mt-8 font-[family-name:var(--font-editorial)] text-[clamp(1.8rem,5vw,3.2rem)] leading-[1.14] tracking-tight text-balance">
                 A proof is not an argument you win. It is an argument that
-                <span className="italic" style={{ color: "#E8765F" }}>
+                <span className="italic" style={{ color: ACCENT }}>
                   {" "}
                   cannot be lost
                 </span>
@@ -256,7 +282,7 @@ export function MathPageV3() {
                 </a>
                 <Link
                   href="/v3/courses"
-                  className="inline-flex items-center rounded-full border border-[#14110E]/25 px-6 py-3 font-mono text-[0.66rem] tracking-[0.16em] uppercase transition-colors hover:border-[#14110E]/60"
+                  className="inline-flex items-center rounded-full border border-current/25 px-6 py-3 font-mono text-[0.66rem] tracking-[0.16em] uppercase transition-colors hover:border-current/60"
                 >
                   Other courses
                 </Link>

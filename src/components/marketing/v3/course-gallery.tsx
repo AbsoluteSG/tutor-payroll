@@ -13,45 +13,54 @@ import { FitText } from "./fit-text";
  * so adding or removing a course re-balances the arrangement automatically.
  */
 
-const INK = "#14110E";
-const PAPER = "#EDE9E1";
-const ACCENT = "#D6432B";
+const INK = "var(--v3-ink)";
+const PAPER = "var(--v3-paper)";
+const ACCENT = "var(--v3-accent)";
+/** A shade off the ground, for the unselected plates. */
+const CARD = "var(--v3-card)";
 
 type Course = {
   code: string;
+  /** Short form, for the card face and the action — the card is 6.5rem wide on
+      a phone, which fits one word of display type. */
   name: string;
+  /** Full name, for the caption and the plate line. Defaults to `name`. */
+  title?: string;
   note: string;
   caption: string;
   /** Dedicated subject page, once one exists. Falls back to an enquiry email. */
   href?: string;
 };
 
+/**
+ * The SAT and the SHSAT were separate plates. They are one course: the same
+ * preparation, often the same student two years apart, and splitting them put
+ * half the gallery on exams — which read as though the practice were mostly test
+ * prep rather than teaching.
+ */
 const COURSES: Course[] = [
   {
     code: "01",
-    name: "SAT",
-    note: "Reading · Writing · Math",
+    name: "Testing",
+    title: "Specialized Testing",
+    note: "SHSAT · Digital SAT",
+    href: "/v3/courses/testing",
     caption:
-      "The full digital SAT, taught as a set of recurring problem shapes rather than a vocabulary list. We work from your student’s own diagnostic, not a generic sequence.",
+      "The SHSAT and the digital SAT, taught as a set of recurring problem shapes rather than a vocabulary list. We work from your student’s own diagnostic, not a generic sequence.",
   },
   {
     code: "02",
-    name: "SHSAT",
-    note: "Specialized High Schools",
-    caption:
-      "Preparation for New York’s specialized high school admissions test — the revising/editing logic and the math reasoning it rewards, practiced under real timing.",
-  },
-  {
-    code: "03",
     name: "ELA",
+    title: "English Language Arts",
     note: "Reading · Writing · Argument",
     href: "/v3/courses/ela",
     caption:
       "Close reading and written argument for their own sake: how a passage is built, what a claim owes its evidence, and how to write a sentence that holds.",
   },
   {
-    code: "04",
+    code: "03",
     name: "Math",
+    title: "Mathematics",
     note: "Pre-algebra → Calculus",
     href: "/v3/courses/math",
     caption:
@@ -100,7 +109,7 @@ export function CourseGallery() {
           }}
         >
           <div
-            className="h-full w-full border-y border-[#14110E]/10"
+            className="h-full w-full border-y border-current/10"
             style={{
               backgroundImage: `radial-gradient(${INK} 1.1px, transparent 1.1px)`,
               backgroundSize: "8px 8px",
@@ -133,7 +142,7 @@ export function CourseGallery() {
               onMouseEnter: () => setSelected(i),
               onFocus: () => setSelected(i),
               "data-selected": isSelected,
-              "aria-label": `${course.name} — ${course.note}. ${
+              "aria-label": `${course.title ?? course.name} — ${course.note}. ${
                 course.href ? "View course" : "Enquire"
               }`,
               // The link itself is never transformed — only the face inside it
@@ -145,7 +154,7 @@ export function CourseGallery() {
               // Four cards must fit the viewport at every width, so they overlap
               // heavily on phones and only separate once there's room.
               className:
-                "group relative -mx-3.5 block w-[6.5rem] shrink-0 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#D6432B] sm:-mx-1 sm:w-[9.5rem] lg:mx-1 lg:w-[13rem]",
+                "group relative -mx-3.5 block w-[6.5rem] shrink-0 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--v3-accent)] sm:-mx-1 sm:w-[9.5rem] lg:mx-1 lg:w-[13rem]",
               style: {
                 zIndex: isSelected ? 30 : 10 - Math.abs(i - selected),
               },
@@ -161,13 +170,18 @@ export function CourseGallery() {
                 <div
                   className="flex aspect-3/4 flex-col justify-between overflow-hidden rounded-[0.6rem] p-3 text-left transition-shadow duration-500 sm:p-4 lg:rounded-[0.75rem] lg:p-5"
                   style={{
-                    backgroundColor: isSelected ? INK : "#F7F5F0",
+                    backgroundColor: isSelected ? INK : CARD,
                     color: isSelected ? PAPER : INK,
+                    // Shadows stay black in both themes — a plate lifted off a
+                    // dark ground still casts a shadow, it is just quieter, and
+                    // tinting it with the ink would make it glow on dark.
                     boxShadow: isSelected
-                      ? "0 26px 60px -18px rgba(20,17,14,0.55)"
-                      : "0 12px 32px -18px rgba(20,17,14,0.4)",
+                      ? "0 26px 60px -18px rgba(0,0,0,0.55)"
+                      : "0 12px 32px -18px rgba(0,0,0,0.4)",
                     outline: `1px solid ${
-                      isSelected ? "transparent" : "rgba(20,17,14,0.12)"
+                      isSelected
+                        ? "transparent"
+                        : "color-mix(in oklab, var(--v3-ink) 12%, transparent)"
                     }`,
                   }}
                 >
@@ -235,7 +249,7 @@ export function CourseGallery() {
         className="relative mx-auto mt-8 w-full max-w-xl px-5 text-center"
       >
         <p className="font-mono text-[0.58rem] tracking-[0.22em] uppercase opacity-45">
-          Plate {active.code} — {active.name}
+          Plate {active.code} — {active.title ?? active.name}
         </p>
         <div className="mt-3">
           <FitText className="text-balance opacity-75">
@@ -273,7 +287,7 @@ export function CourseGallery() {
         )}
         <a
           href="mailto:hello@boroughprep.com"
-          className="inline-flex items-center rounded-full border border-[#14110E]/25 px-6 py-3 font-mono text-[0.66rem] tracking-[0.16em] uppercase transition-colors hover:border-[#14110E]/60"
+          className="inline-flex items-center rounded-full border border-current/25 px-6 py-3 font-mono text-[0.66rem] tracking-[0.16em] uppercase transition-colors hover:border-current/60"
         >
           Ask a question
         </a>

@@ -79,7 +79,9 @@ export function CreationDotField({ className = "" }: Props) {
       // instead of letterboxing into a small band on narrow screens.
       preserveAspectRatio="xMidYMid slice"
       className={className}
-      fill="#14110E"
+      // currentColor rather than a variable: var() is not resolved inside SVG
+      // presentation attributes, and the field wants the page's ink anyway.
+      fill="currentColor"
       // SVG clips to its viewBox by default, which would cut the rising columns
       // off at the top of the plate. Letting them overflow lets them travel all
       // the way up the panel; the pinned stage clips them at the viewport edge.

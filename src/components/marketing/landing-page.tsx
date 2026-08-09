@@ -6,6 +6,7 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 // Placeholder copy — swap in real business details, photos, and a working
 // contact destination once the client has them ready.
@@ -50,12 +51,15 @@ export function LandingPage() {
         <span className="font-heading text-lg font-semibold tracking-tight">
           Borough Prep
         </span>
-        <Link
-          href="/login"
-          className={buttonVariants({ variant: "ghost", size: "sm" })}
-        >
-          Log in
-        </Link>
+        <div className="flex items-center gap-1">
+          <ThemeToggle className="text-muted-foreground hover:bg-accent" />
+          <Link
+            href="/login"
+            className={buttonVariants({ variant: "ghost", size: "sm" })}
+          >
+            Log in
+          </Link>
+        </div>
       </header>
 
       <section className="mx-auto flex max-w-3xl flex-col items-center gap-6 px-6 py-20 text-center sm:py-28">

@@ -2,6 +2,7 @@ import { Instrument_Serif } from "next/font/google";
 import Link from "next/link";
 import { HeroPlate } from "./v3/hero-plate";
 import { MorphWord } from "./v3/morph-word";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 /**
  * "Editorial Learning Lab" — a standalone marketing page with its own type and
@@ -22,19 +23,19 @@ const editorial = Instrument_Serif({
   variable: "--font-editorial",
 });
 
-const PAPER = "#EDE9E1";
-const INK = "#14110E";
+const PAPER = "var(--v3-paper)";
+const INK = "var(--v3-ink)";
 
 export function LandingPageV3() {
   return (
     <div
-      className={`${editorial.variable} relative flex h-[100svh] flex-col overflow-hidden selection:bg-[#D6432B] selection:text-[#EDE9E1]`}
+      className={`${editorial.variable} relative flex h-[100svh] flex-col overflow-hidden selection:bg-[var(--v3-accent)] selection:text-[var(--v3-paper)]`}
       style={{ backgroundColor: PAPER, color: INK }}
     >
       {/* Film grain across the whole page — printed, not rendered. */}
       <svg
         aria-hidden
-        className="pointer-events-none absolute inset-0 z-50 h-full w-full opacity-[0.16] mix-blend-multiply"
+        className="v3-grain pointer-events-none absolute inset-0 z-50 h-full w-full"
       >
         <filter id="v3-grain">
           <feTurbulence
@@ -49,7 +50,7 @@ export function LandingPageV3() {
       </svg>
 
       {/* ───────────────────────── Nav ───────────────────────── */}
-      <header className="relative z-20 flex shrink-0 items-center justify-between border-b border-[#14110E]/12 px-5 py-4 sm:px-8">
+      <header className="relative z-20 flex shrink-0 items-center justify-between border-b border-current/12 px-5 py-4 sm:px-8">
         {/* Instrument Serif is already narrow, so this wordmark gets a little
             positive tracking and room to breathe rather than tracking-tight. */}
         <span className="font-[family-name:var(--font-editorial)] text-[1.5rem] leading-[1.15] tracking-[0.035em]">
@@ -66,12 +67,15 @@ export function LandingPageV3() {
             Enquire
           </a>
         </nav>
-        <Link
-          href="/v3/courses"
-          className="font-mono text-[0.65rem] tracking-[0.18em] uppercase underline decoration-[#14110E]/30 underline-offset-[5px] transition-colors hover:decoration-[#14110E]"
-        >
-          Begin
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/v3/courses"
+            className="font-mono text-[0.65rem] tracking-[0.18em] uppercase underline decoration-current/30 underline-offset-[5px] transition-colors hover:decoration-current"
+          >
+            Begin
+          </Link>
+          <ThemeToggle className="-mr-1.5 opacity-55" />
+        </div>
       </header>
 
       {/* ───────────────────────── Hero ───────────────────────── */}
@@ -93,8 +97,7 @@ export function LandingPageV3() {
           aria-hidden
           className="pointer-events-none absolute inset-0 z-[5]"
           style={{
-            background:
-              "radial-gradient(ellipse 44rem 24rem at 50% 50%, rgba(237,233,225,0.94) 0%, rgba(237,233,225,0.74) 46%, rgba(237,233,225,0) 78%)",
+            background: `radial-gradient(ellipse 44rem 24rem at 50% 50%, color-mix(in srgb, ${PAPER} 94%, transparent) 0%, color-mix(in srgb, ${PAPER} 74%, transparent) 46%, transparent 78%)`,
           }}
         />
 
@@ -127,7 +130,7 @@ export function LandingPageV3() {
             </Link>
             <a
               href="mailto:hello@boroughprep.com"
-              className="font-mono text-[0.68rem] tracking-[0.16em] uppercase underline decoration-[#14110E]/25 underline-offset-[6px] transition-colors hover:decoration-[#14110E]"
+              className="font-mono text-[0.68rem] tracking-[0.16em] uppercase underline decoration-current/25 underline-offset-[6px] transition-colors hover:decoration-current"
             >
               Enquire
             </a>

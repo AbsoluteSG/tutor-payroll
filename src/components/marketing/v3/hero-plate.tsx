@@ -12,8 +12,8 @@ import { useEffect, useState } from "react";
  * devices and for reduced-motion users; the field itself still renders.
  */
 
-const PAPER = "#EDE9E1";
-const INK = "#14110E";
+const PAPER = "var(--v3-paper)";
+const INK = "var(--v3-ink)";
 
 export function HeroPlate() {
   const [offset, setOffset] = useState({ x: 0, y: 0 });
@@ -65,25 +65,28 @@ export function HeroPlate() {
       </div>
 
       {/* Soften the field where it meets the nav and the footer line. */}
+      {/* `transparent` rather than the ground at zero alpha: it has to fade out
+          to nothing in whichever theme is active, and premultiplied
+          interpolation makes it equivalent to the old literal on paper. */}
       <div
         className="absolute inset-x-0 top-0 h-20"
         style={{
-          background: `linear-gradient(to bottom, ${PAPER} 0%, rgba(237,233,225,0) 100%)`,
+          background: `linear-gradient(to bottom, ${PAPER} 0%, transparent 100%)`,
         }}
       />
       <div
         className="absolute inset-x-0 bottom-0 h-20"
         style={{
-          background: `linear-gradient(to top, ${PAPER} 0%, rgba(237,233,225,0) 100%)`,
+          background: `linear-gradient(to top, ${PAPER} 0%, transparent 100%)`,
         }}
       />
 
       {/* Hairline registration rings, like a printed specimen plate. */}
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="size-[min(58vw,31rem)] rounded-full border border-[#14110E]/12" />
+        <div className="size-[min(58vw,31rem)] rounded-full border border-current/12" />
       </div>
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="size-[min(40vw,21rem)] rounded-full border border-[#14110E]/8" />
+        <div className="size-[min(40vw,21rem)] rounded-full border border-current/8" />
       </div>
     </div>
   );
