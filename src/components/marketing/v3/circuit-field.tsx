@@ -2,7 +2,7 @@ import type { CSSProperties } from "react";
 
 /**
  * Background technology for the Computer Science hero: a printed circuit,
- * drawn in the same halftone-and-hairline register as the rest of /v3.
+ * drawn in the same halftone-and-hairline register as the rest of the marketing site.
  *
  * It sits behind the terminal and belongs to the same argument the page makes —
  * the descent section runs language → compiler → instruction → circuit, and this

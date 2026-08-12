@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { SentenceAnatomy } from "./v3/sentence-anatomy";
 import { BookingPanel } from "./v3/booking-panel";
+import { SAMANTHA, LEAH } from "./roster";
 import {
   SubjectPage,
   SectionHead,
@@ -46,26 +47,13 @@ const TRACKS = [
   { name: "Literature seminar", note: "Small group" },
 ];
 
-/** PLACEHOLDER credentials — see the warning in v3/booking-panel.tsx. */
+/**
+ * The tutors offering this subject, from the shared roster. Real people only —
+ * see roster.ts. This page previously listed three invented ones.
+ */
 const TUTORS = [
-  {
-    initials: "MR",
-    name: "Maya R.",
-    focus: "Essay & argument",
-    credentials: ["M.F.A. Nonfiction, Columbia", "8 years essay instruction", "Former admissions reader"],
-  },
-  {
-    initials: "DL",
-    name: "Daniel L.",
-    focus: "Close reading",
-    credentials: ["Ph.D. English, CUNY", "12 years close reading", "Published literary critic"],
-  },
-  {
-    initials: "SO",
-    name: "Sofia O.",
-    focus: "Timed writing",
-    credentials: ["M.A. Journalism, NYU", "7 years exam writing", "Former AP Lang scorer"],
-  },
+  { ...SAMANTHA, focus: "Writing & essay editing" },
+  { ...LEAH, focus: "English" },
 ];
 
 const TRIVIUM = [
@@ -264,7 +252,7 @@ export function ElaPageV3() {
                   </span>
                 </a>
                 <Link
-                  href="/v3/courses"
+                  href="/courses"
                   className="v3-label inline-flex items-center rounded-full border border-current/25 px-7 py-4 font-mono uppercase transition-colors hover:border-current/60"
                 >
                   Other courses

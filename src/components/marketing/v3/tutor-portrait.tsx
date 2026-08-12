@@ -20,7 +20,7 @@ import Image from "next/image";
 export const PORTRAIT_ASPECT = "4 / 5";
 
 type Props = {
-  /** Path under /public, e.g. "/tutors/maya-r.jpg". Omit for the placeholder. */
+  /** Path under /public, e.g. "/tutors/ella.webp". Omit for the placeholder. */
   image?: string;
   /** Two letters, for the placeholder monogram. */
   initials: string;

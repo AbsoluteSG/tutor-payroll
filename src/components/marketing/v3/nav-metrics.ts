@@ -27,4 +27,4 @@ export const NAV_ITEM = "v3-label font-mono uppercase";
  * NAV_ITEM rather than to match it — this is display type, not a label.
  */
 export const NAV_WORDMARK =
-  "font-[family-name:var(--font-editorial)] text-[1.75rem] leading-none tracking-[0.035em]";
+  "font-[family-name:var(--font-editorial)] text-[1.75rem] leading-none tracking-[0.035em] whitespace-nowrap";

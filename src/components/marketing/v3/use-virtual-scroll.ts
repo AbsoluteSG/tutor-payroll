@@ -224,7 +224,7 @@ export function useVirtualScroll({ max, enabled, onActiveChange }: Options) {
    * Land on a section immediately, without easing there.
    *
    * For arriving at a section rather than travelling to one — a link into
-   * /v3/courses/math#book should open on the booking panel, not open on the
+   * /courses/math#book should open on the booking panel, not open on the
    * hero and then animate past it while the visitor watches.
    *
    * Writes --p directly and seeds both ends of the easing loop, so the next

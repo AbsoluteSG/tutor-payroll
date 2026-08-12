@@ -7,10 +7,11 @@ import Link from "next/link";
 import { useVirtualScroll } from "./use-virtual-scroll";
 import { usePrefersReducedMotion } from "./use-reduced-motion";
 import { NAV_BAR, NAV_ITEM } from "./nav-metrics";
+import { ChatWidget } from "./chat-widget";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 /**
- * Shared shell for the per-subject pages (/v3/courses/*).
+ * Shared shell for the per-subject pages (/courses/*).
  *
  * The page is a fixed viewport: the document does not scroll, there is no
  * scrollbar, and no section ever travels off screen. Wheel/touch/key input feeds
@@ -117,13 +118,18 @@ function Panel({
     );
   }
 
+  // sm:pr-38 reserves the section rail's gutter. The rail is fixed to the right
+  // edge and is about 132px wide, so without it any panel whose content reaches
+  // the full width runs underneath — which the booking panel did at 1280. No
+  // max-width fixes this on its own: at narrower widths the content simply
+  // fills whatever space it is given, rail or no rail.
   return (
     <section
       data-active={active}
       aria-hidden={!active}
       className={`${skin} ${
         spec.last ? "v3-panel-last" : "v3-panel"
-      } v3-no-scrollbar absolute inset-0 flex flex-col justify-center overflow-y-auto px-4 pt-12 pb-10 sm:px-6 sm:pt-14 sm:pb-12`}
+      } v3-no-scrollbar absolute inset-0 flex flex-col justify-center overflow-y-auto px-4 pt-12 pb-10 sm:px-6 sm:pt-14 sm:pr-38 sm:pb-12`}
       style={{ ...ground, "--i": index } as CSSProperties}
     >
       <div className="mx-auto w-full">{spec.content}</div>
@@ -183,7 +189,7 @@ export function SubjectPage({
       } selection:bg-[var(--v3-accent)] selection:text-[var(--v3-paper)]`}
       style={{ backgroundColor: PAPER, color: INK }}
     >
-      {/* Film grain, matched to the rest of /v3. Blend mode and strength come
+      {/* Film grain, matched to the rest of the marketing site. Blend mode and strength come
           from the theme: grain is printed into paper and reflects off ink. */}
       <svg
         aria-hidden
@@ -208,7 +214,7 @@ export function SubjectPage({
         style={{ backgroundColor: PAPER }}
       >
         <Link
-          href="/v3/courses"
+          href="/courses"
           className={`${NAV_ITEM} group inline-flex items-center gap-2 transition-opacity hover:opacity-60`}
         >
           <span className="inline-block transition-transform duration-300 group-hover:-translate-x-1">
@@ -347,6 +353,12 @@ export function SubjectPage({
           </div>
         </footer>
       ) : null}
+
+      {/* Outside the locked/unlocked branch above: these pages spend most of
+          their life in the pinned state with no footer, and that is exactly
+          when a visitor is reading about a course and might want to ask.
+          Inset so the open panel does not sit on top of the section rail. */}
+      <ChatWidget railInset />
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { FitText } from "./fit-text";
+import { CourseMark, type CourseMarkKind } from "./course-marks";
 
 /**
  * The fanned course selector. Cards sit on a shared perspective stage between
@@ -19,6 +20,32 @@ const ACCENT = "var(--v3-accent)";
 /** A shade off the ground, for the unselected plates. */
 const CARD = "var(--v3-card)";
 
+/**
+ * Whether the gallery is coloured by subject.
+ *
+ * The rest of the marketing site is ink on paper with a single accent, and this is the one
+ * place that departs from it: four plates sitting side by side is exactly where
+ * a hue per subject earns its keep, because it is the only screen where a
+ * visitor compares the courses against each other.
+ *
+ * Set this to false to put the gallery back to pure ink — every hue falls back
+ * to the accent or to the plate's own ink, and nothing else has to change.
+ */
+const SUBJECT_COLOR = true;
+
+type Hue = "orange" | "purple" | "blue" | "green";
+
+/**
+ * The course's hue, or `fallback` when subject colour is switched off.
+ *
+ * Generic in the fallback so a caller can hand back `undefined` — which is how
+ * the mark reverts to inheriting the plate's ink rather than being told a
+ * colour at all.
+ */
+function hueOf<T extends string | undefined>(hue: Hue, fallback: T) {
+  return SUBJECT_COLOR ? `var(--v3-hue-${hue})` : fallback;
+}
+
 type Course = {
   code: string;
   /** Short form, for the card face and the action — the card is 6.5rem wide on
@@ -30,6 +57,10 @@ type Course = {
   caption: string;
   /** Dedicated subject page, once one exists. Falls back to an enquiry email. */
   href?: string;
+  /** The plate's drawing — see course-marks.tsx. */
+  mark: CourseMarkKind;
+  /** The plate's colour, when subject colour is on. */
+  hue: Hue;
 };
 
 /**
@@ -44,7 +75,9 @@ const COURSES: Course[] = [
     name: "Testing",
     title: "Specialized Testing",
     note: "SHSAT · Digital SAT",
-    href: "/v3/courses/testing",
+    href: "/courses/testing",
+    mark: "omr",
+    hue: "orange",
     caption:
       "The SHSAT and the digital SAT, taught as a set of recurring problem shapes rather than a vocabulary list. We work from your student’s own diagnostic, not a generic sequence.",
   },
@@ -53,7 +86,9 @@ const COURSES: Course[] = [
     name: "ELA",
     title: "English Language Arts",
     note: "Reading · Writing · Argument",
-    href: "/v3/courses/ela",
+    href: "/courses/ela",
+    mark: "book",
+    hue: "purple",
     caption:
       "Close reading and written argument for their own sake: how a passage is built, what a claim owes its evidence, and how to write a sentence that holds.",
   },
@@ -62,7 +97,9 @@ const COURSES: Course[] = [
     name: "Math",
     title: "Mathematics",
     note: "Pre-algebra → Calculus",
-    href: "/v3/courses/math",
+    href: "/courses/math",
+    mark: "operators",
+    hue: "blue",
     caption:
       "Coursework support that rebuilds from the idea underneath the gap — so the next chapter has something to stand on instead of another memorized rule.",
   },
@@ -71,7 +108,9 @@ const COURSES: Course[] = [
     name: "Computing",
     title: "Computer Science",
     note: "C++ · Systems · AI-paired",
-    href: "/v3/courses/cs",
+    href: "/courses/cs",
+    mark: "terminal",
+    hue: "green",
     caption:
       "Taught downward before fast: years of C++ written by hand, close enough to the machine to build real judgement — and only then Claude and GPT, as tools to direct and audit rather than lean on.",
   },
@@ -197,10 +236,25 @@ export function CourseGallery() {
                 }}
               >
                 <div
-                  className="flex aspect-3/4 flex-col justify-between overflow-hidden rounded-[0.6rem] p-3 text-left transition-shadow duration-500 sm:p-4 lg:rounded-[0.75rem] lg:p-5"
+                  // A selected plate takes the opposite skin rather than having
+                  // its two colours swapped by hand. Same result for the ground
+                  // and the type, but every *token* inside it now resolves
+                  // against the ink it has become — the accent and the subject
+                  // hues included, which otherwise stayed the page's versions
+                  // and sat on a ground they were never chosen for.
+                  className={`${
+                    isSelected ? "v3-invert" : ""
+                  } flex aspect-3/4 flex-col justify-between overflow-hidden rounded-[0.6rem] p-3 text-left transition-shadow duration-500 sm:p-4 lg:rounded-[0.75rem] lg:p-5`}
                   style={{
-                    backgroundColor: isSelected ? INK : CARD,
-                    color: isSelected ? PAPER : INK,
+                    backgroundColor: isSelected
+                      ? PAPER
+                      : // A wash of the course's hue through the card, so an
+                        // unselected plate is still tinted toward its subject.
+                        `color-mix(in oklab, ${hueOf(
+                          course.hue,
+                          CARD
+                        )} 5%, ${CARD})`,
+                    color: INK,
                     // Shadows stay black in both themes — a plate lifted off a
                     // dark ground still casts a shadow, it is just quieter, and
                     // tinting it with the ink would make it glow on dark.
@@ -214,32 +268,32 @@ export function CourseGallery() {
                     }`,
                   }}
                 >
-                  <div className="flex items-start justify-between font-mono text-[0.7rem] tracking-[0.16em] uppercase opacity-60 lg:text-[0.85rem]">
-                    <span>{course.code}</span>
+                  <div className="flex items-start justify-between font-mono text-[0.7rem] tracking-[0.16em] uppercase lg:text-[0.85rem]">
+                    <span
+                      style={{ color: hueOf(course.hue, "inherit") }}
+                      className={SUBJECT_COLOR ? "" : "opacity-60"}
+                    >
+                      {course.code}
+                    </span>
                     <span
                       className="size-2 rounded-full transition-opacity lg:size-2.5"
                       style={{
-                        backgroundColor: ACCENT,
+                        backgroundColor: hueOf(course.hue, ACCENT),
                         opacity: isSelected ? 1 : 0,
                       }}
                     />
                   </div>
 
-                  {/* Halftone band — the printed texture of the plate. */}
-                  <div
-                    aria-hidden
+                  {/* The plate's subject, drawn. This was a halftone band
+                      shared by every plate — the same texture four times, which
+                      told a visitor scanning the gallery nothing about which
+                      course they were looking at. The marks are currentColor,
+                      so they invert with the plate on selection without being
+                      told which state they are in. */}
+                  <CourseMark
+                    kind={course.mark}
+                    color={hueOf(course.hue, undefined)}
                     className="my-2 h-14 w-full lg:my-4 lg:h-24"
-                    style={{
-                      backgroundImage: `radial-gradient(${
-                        isSelected ? PAPER : INK
-                      } 1px, transparent 1px)`,
-                      backgroundSize: "6px 6px",
-                      opacity: 0.42,
-                      maskImage:
-                        "linear-gradient(to bottom, #000, transparent 90%)",
-                      WebkitMaskImage:
-                        "linear-gradient(to bottom, #000, transparent 90%)",
-                    }}
                   />
 
                   {/* The plate face does not take the page's type scale. A
@@ -295,7 +349,10 @@ export function CourseGallery() {
                   // only 6.75rem wide, and the tighter padding put the button
                   // at 35px tall — under the 44px a thumb needs.
                   className="group mt-5 flex items-center justify-center gap-2 rounded-full px-3 py-4 text-center font-mono text-[0.7rem] leading-none tracking-[0.12em] uppercase transition-transform duration-200 hover:scale-[1.03] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--v3-accent)] sm:gap-2.5 sm:px-4 sm:text-[0.9rem] lg:mt-7 lg:text-[1.1rem]"
-                  style={{ backgroundColor: ACCENT, color: PAPER }}
+                  style={{
+                    backgroundColor: hueOf(course.hue, ACCENT),
+                    color: PAPER,
+                  }}
                 >
                   {/* Literal space: JSX drops the whitespace between elements
                       on separate lines, which ran this together as

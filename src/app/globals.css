@@ -138,12 +138,47 @@
    Consumers reference --v3-paper / --v3-ink / --v3-accent only; the components
    pass them through JS constants of the same name (see v3/subject-page.tsx).
    Hairlines and washes use currentColor with an opacity modifier instead of a
-   token, so they invert along with the type without naming a colour at all. */
+   token, so they invert along with the type without naming a colour at all.
+
+   .v3-invert-hover is the same swap, but only while the surface is hovered or
+   holds focus — the course plates take the ink skin as you point at them, and
+   the tutor cards do the same. Focus-within as well as hover, so it is not a
+   pointer-only affordance.
+
+   A surface using it must set both `background-color` and `color` from the
+   tokens on its own element: `color` inherits as a resolved colour, so a card
+   that merely inherits type colour from the page would swap its ground and keep
+   its ink, and disappear. */
 :root,
-.dark .v3-invert {
+.dark .v3-invert,
+.dark .v3-invert-hover:hover,
+.dark .v3-invert-hover:focus-within {
   --v3-paper: #ede9e1;
   --v3-ink: #14110e;
   --v3-accent: #d6432b;
+  /* One hue per course, for the gallery plates. Like the accent, each belongs
+     to the SKIN rather than the theme, because a plate takes the ink skin when
+     it is selected and its hue has to move with it. See course-gallery.tsx,
+     which can switch the whole scheme off.
+
+     These are the shades for a LIGHT ground. The brief named four mid-tone
+     colours — #f59e0b, #8b5cf6, #3b82f6, #10b981 — and those are used verbatim
+     on the ink skin below, where they read well. On paper they cannot be: the
+     orange measures 1.79:1 and the green 2.14:1 against a light card, so as a
+     plate number or a drawing they would be all but invisible. These are the
+     same four hues taken down to where they hold, and a filled Book button in
+     any of them clears 4.5:1 under paper type. */
+  --v3-hue-orange: #92400e;
+  --v3-hue-purple: #6d28d9;
+  --v3-hue-blue: #1d4ed8;
+  --v3-hue-green: #047857;
+
+  /* The booking widget's blue. --fill is a button ground and carries white
+     type at 4.58:1 on either skin, so it does not move. --line is the same
+     blue used AS type or a border on the card, which does have to move: the
+     bright one measures 4.11:1 on paper and 3.6:1 on ink, both under AA. */
+  --v3-book-fill: #006bff;
+  --v3-book-line: #0b4fd0;
   /* Cards and wells: a shade off the ground, never a different hue. */
   --v3-card: #f7f5f0;
   /* Grain is printed INTO paper and shines back OFF ink. */
@@ -152,10 +187,22 @@
 }
 
 .dark,
-.v3-invert {
+.v3-invert,
+.v3-invert-hover:hover,
+.v3-invert-hover:focus-within {
   --v3-paper: #14110e;
   --v3-ink: #ede9e1;
   --v3-accent: #e8765f;
+  /* The four as specified, unaltered. They are mid-tone and saturated, which
+     is exactly what an ink ground wants. */
+  --v3-hue-orange: #f59e0b;
+  --v3-hue-purple: #8b5cf6;
+  --v3-hue-blue: #3b82f6;
+  --v3-hue-green: #10b981;
+
+  /* Same fill; the line lifts to clear AA against an ink card. */
+  --v3-book-fill: #006bff;
+  --v3-book-line: #6ba6ff;
   --v3-card: #1e1a16;
   --v3-grain-blend: screen;
   /* Screen over near-black is far more assertive than multiply over paper, so

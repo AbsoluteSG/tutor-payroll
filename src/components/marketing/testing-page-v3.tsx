@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { AnswerSheet } from "./v3/answer-sheet";
 import { BookingPanel } from "./v3/booking-panel";
+import { SAMANTHA, JARED, ELLA, MAGGIE } from "./roster";
 import {
   SubjectPage,
   SectionHead,
@@ -40,26 +41,15 @@ const TRACKS = [
   { name: "Diagnostic only", note: "One sitting" },
 ];
 
-/** PLACEHOLDER credentials — see the warning in v3/booking-panel.tsx. */
+/**
+ * The tutors offering this subject, from the shared roster. Real people only —
+ * see roster.ts. This page previously listed three invented ones.
+ */
 const TUTORS = [
-  {
-    initials: "JC",
-    name: "Julian C.",
-    focus: "SHSAT",
-    credentials: ["B.S. Applied Math, Cooper Union", "10 years SHSAT preparation", "Stuyvesant graduate"],
-  },
-  {
-    initials: "PE",
-    name: "Priya E.",
-    focus: "SAT math",
-    credentials: ["B.A. Physics, Barnard", "800 SAT Math", "6 years digital SAT"],
-  },
-  {
-    initials: "NB",
-    name: "Nadia B.",
-    focus: "SAT reading & writing",
-    credentials: ["M.A. Linguistics, Columbia", "790 SAT Reading & Writing", "9 years exam coaching"],
-  },
+  { ...JARED, focus: "SHSAT, SAT & ACT" },
+  { ...ELLA, focus: "SHSAT & SAT" },
+  { ...SAMANTHA, focus: "SHSAT & state tests" },
+  { ...MAGGIE, focus: "SAT & ACT" },
 ];
 
 const EXAMS = [
@@ -131,7 +121,13 @@ export function TestingPageV3() {
             <BookingPanel
               subject="Specialized Testing"
               heading="Book a session"
-              blurb="Pick the exam your student is sitting and the tutor you'd like them to work with. If you're not sure where they stand, start with a diagnostic."
+              // The old blurb opened by telling the visitor to pick an exam and
+              // a tutor, immediately above two steps labelled "Choose an exam"
+              // and "Choose a tutor". Cutting the restatement took two lines
+              // off a panel that did not have them to spare, and left the one
+              // sentence that says something the labels do not.
+              blurb="Not sure where your student stands? Start with a diagnostic."
+              trackLabel="Choose an exam"
               tracks={TRACKS}
               tutors={TUTORS}
             />
@@ -262,7 +258,7 @@ export function TestingPageV3() {
                   </span>
                 </a>
                 <Link
-                  href="/v3/courses"
+                  href="/courses"
                   className="v3-label inline-flex items-center rounded-full border border-current/25 px-7 py-4 font-mono uppercase transition-colors hover:border-current/60"
                 >
                   Other courses

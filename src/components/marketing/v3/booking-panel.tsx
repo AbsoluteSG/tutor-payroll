@@ -1,44 +1,50 @@
 "use client";
 
 import { useState } from "react";
-import { INK, PAPER, ACCENT } from "./subject-page";
+import Link from "next/link";
+import { ArrowLeft, ArrowRight, Check, Clock } from "lucide-react";
 import { TutorPortrait } from "./tutor-portrait";
+import { DAYS, slotsFor } from "./availability";
+import {
+  SHOW_PRICING,
+  TIER_BY_ID,
+  TUTOR_TIER,
+} from "../pricing";
 
 /**
  * The booking panel — a subject page's second section, immediately after the
- * hero.
+ * hero. Shared by all four subject pages.
  *
- * The subject pages used to hold their only call to action at the very end, six
- * sections down a sequence with no scrollbar, so a visitor who stopped reading
- * partway never saw one at all. This puts the ask second: pick a specific course
- * within the subject, pick a tutor, send.
+ * ─── Why it is a stepper ────────────────────────────────────────────────────
+ * This was one surface carrying every choice at once, and it did not fit: it
+ * needed 1051px of a 900px stage, so on a page whose panels cannot scroll past
+ * their own height the call to action fell below the fold, the last tutor card
+ * ran under the section rail, and its content was clipped mid-word.
  *
- * Both choices are laid out horizontally — courses as a row of plates, tutors as
- * a row of cards carrying a portrait and their credentials. The earlier version
- * was two columns of small text rows, which asked a visitor to read nine
- * near-identical lines before they could act on any of them. A face and three
- * credentials are compared at a glance; a 14px row of initials is not.
+ * A stepper solves that structurally rather than by shrinking things. Only one
+ * choice is ever rendered, so each gets the full width and large targets, and
+ * the panel's height stops depending on how much there is to choose between.
+ * The running summary is what pays for the loss of seeing everything at once.
  *
- * The cards carry credentials rather than a written-up description of how each
- * tutor teaches. Nine paragraphs of that read as filler and none of it is
- * checkable — a parent choosing between three strangers wants the degree, the
- * years, and the score, in the same place on every card.
+ * ─── Why it looks like a scheduling product ─────────────────────────────────
+ * The card is deliberately not editorial: sans, soft radii, one blue, the
+ * shape people already know from Calendly. It sits on the page's own paper or
+ * ink rather than a white ground of its own, so it reads as a widget the page
+ * contains rather than one pasted onto it. The section heading above it stays
+ * in the page's voice.
  *
- * The selection composes a prefilled enquiry rather than writing a booking,
- * which matches every other action on the marketing site. It means the enquiry
- * that arrives already names the course and the tutor instead of being a blank
- * "interested in tutoring" — but a real scheduling endpoint should replace the
- * mailto before this carries any volume.
+ * ─── Nothing here reserves anything ─────────────────────────────────────────
+ * The days are weekday names, not dates, and the times are a fixed placeholder
+ * grid — a real date implies a calendar, and none of this is connected to one.
+ * The final action composes a prefilled enquiry, which is why it says "request"
+ * throughout and states that nothing is held until the practice replies. Wire a
+ * scheduling backend before this carries volume.
  *
- * Tutor names and course tracks are PLACEHOLDER, like the rest of the /v3 copy.
- * So are the portraits — see tutor-portrait.tsx.
- *
- * The credentials are placeholder too, and they are the dangerous kind: degrees,
- * years and test scores attached to a named person read as verified fact in a
- * way that marketing prose does not. Every line must be replaced with something
- * the business can substantiate before this page is public.
+ * Tutor names and tracks are PLACEHOLDER, as elsewhere on the marketing site.
  */
 
+const FILL = "var(--v3-book-fill)";
+const LINE = "var(--v3-book-line)";
 const ENQUIRY_TO = "hello@boroughprep.com";
 
 export type BookingTrack = {
@@ -52,25 +58,10 @@ export type BookingTutor = {
   /** Rendered as the placeholder portrait's monogram. */
   initials: string;
   name: string;
+  /** Three or four words. What they are the one to ask for. */
   focus: string;
-  /**
-   * What qualifies them, shortest first — degree, experience, a proof point.
-   * Two or three entries; the card is not a CV. Kept as separate strings rather
-   * than one sentence so they stack as scannable lines: a parent comparing
-   * three tutors is looking for the same fact in the same place on each card,
-   * and prose makes them hunt for it.
-   */
-  credentials: string[];
   /** Path under /public once a photograph exists. */
   image?: string;
-};
-
-/** Always offered, so a visitor without a preference is never stuck. */
-const ANY_TUTOR: BookingTutor = {
-  initials: "—",
-  name: "No preference",
-  focus: "Matched to the student",
-  credentials: [],
 };
 
 type Props = {
@@ -78,95 +69,85 @@ type Props = {
   subject: string;
   heading: string;
   blurb: string;
+  /** Step 01's label — "Choose an exam" reads better than "course" on /testing. */
+  trackLabel?: string;
   tracks: BookingTrack[];
   tutors: BookingTutor[];
 };
 
-function enquiryHref(subject: string, track: BookingTrack, tutor: BookingTutor) {
+function enquiryHref(
+  subject: string,
+  track: BookingTrack,
+  tutor: BookingTutor | null,
+  day: string,
+  time: string | null
+) {
   const body = [
-    "I'd like to book a session.",
+    "I'd like to request a session.",
     "",
-    `Subject:  ${subject}`,
-    `Course:   ${track.name}`,
-    `Tutor:    ${tutor.name}`,
+    `Subject:   ${subject}`,
+    `Course:    ${track.name}`,
+    `Tutor:     ${tutor ? tutor.name : "No preference"}`,
+    `Preferred: ${day}${time ? `, ${time}` : ""}`,
     "",
     "Student's name:",
     "Grade:",
-    "Availability:",
+    "Anything we should know:",
     "",
   ].join("\n");
 
   return `mailto:${ENQUIRY_TO}?subject=${encodeURIComponent(
-    `Booking — ${subject}: ${track.name}`
+    `Session request — ${subject}: ${track.name}`
   )}&body=${encodeURIComponent(body)}`;
 }
 
-/** The numbered rule above each step. */
-function StepHead({ step, title }: { step: string; title: string }) {
+function SummaryRow({ label, value }: { label: string; value: string | null }) {
   return (
-    <p className="v3-label flex items-baseline gap-2.5 border-b border-current/12 pb-2.5 uppercase">
-      <span style={{ color: ACCENT }}>{step}</span>
-      <span className="opacity-65">{title}</span>
-    </p>
-  );
-}
-
-/** One course in the horizontal row. Selected plates invert to ink. */
-function TrackChoice({
-  selected,
-  onSelect,
-  track,
-}: {
-  selected: boolean;
-  onSelect: () => void;
-  track: BookingTrack;
-}) {
-  return (
-    <button
-      type="button"
-      role="radio"
-      aria-checked={selected}
-      onClick={onSelect}
-      className="flex min-h-[6.75rem] flex-col justify-center gap-1 rounded-lg border px-4 py-3 text-left transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--v3-accent)]"
-      style={{
-        backgroundColor: selected ? INK : "transparent",
-        color: selected ? PAPER : INK,
-        borderColor: selected
-          ? INK
-          : "color-mix(in oklab, var(--v3-ink) 18%, transparent)",
-      }}
-    >
-      <span className="font-[family-name:var(--font-editorial)] text-[2.025rem] leading-tight tracking-tight sm:text-[2.4rem]">
-        {track.name}
+    <div className="flex items-baseline justify-between gap-3 border-b border-current/12 py-2 last:border-b-0">
+      {/* Literal space: the flex row is visual only, and without it a screen
+          reader announces "CourseEssay & argument". */}
+      <span className="text-[0.8rem] tracking-wide uppercase opacity-55">
+        {label}
+      </span>{" "}
+      <span
+        className={`text-right text-[0.95rem] font-medium ${
+          value ? "" : "opacity-40"
+        }`}
+      >
+        {value ?? "—"}
       </span>
-      <span className="v3-micro uppercase opacity-65">{track.note}</span>
-    </button>
+    </div>
   );
 }
 
+/** A large selectable tile, shared by the track and tutor steps. */
 /**
- * One tutor card: portrait, name, focus, and a sentence.
+ * A tutor's hourly rate, for the tile and the summary.
  *
- * The portrait sits beside the text rather than above it. Stacked, at three
- * cards across a 64rem row, a 4:5 portrait is over 400px tall and the panel
- * overruns the viewport by a third — on a page whose panels hide their
- * scrollbar, that puts the call to action below the fold with nothing to
- * suggest it is there. Beside the text the whole card is about 140px and the
- * face is still the first thing seen.
- *
- * The whole card is the control rather than a button tucked inside it — at this
- * size the portrait is the thing a visitor aims at, and a card that highlights
- * on hover but only responds on a small target underneath is the kind of near
- * miss that makes an interface feel broken.
+ * Returns null when pricing is off or the tutor has no tier, so every caller
+ * can render it unconditionally and reverting leaves no empty rows behind.
  */
-function TutorChoice({
+function rateFor(name: string | undefined): number | null {
+  if (!SHOW_PRICING || !name) return null;
+  const tier = TUTOR_TIER[name];
+  return tier ? TIER_BY_ID[tier].rate : null;
+}
+
+function Tile({
   selected,
   onSelect,
-  tutor,
+  title,
+  note,
+  meta,
+  portrait,
 }: {
   selected: boolean;
   onSelect: () => void;
-  tutor: BookingTutor;
+  title: string;
+  note: string;
+  /** Right-aligned trailing detail — the rate, on the tutor step. */
+  meta?: string;
+  portrait?: React.ReactNode;
 }) {
   return (
     <button
@@ -174,189 +155,367 @@ function TutorChoice({
       role="radio"
       aria-checked={selected}
       onClick={onSelect}
-      className="group flex items-stretch gap-3 overflow-hidden rounded-lg border p-2.5 text-left transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--v3-accent)] sm:gap-3.5 sm:p-3"
-      style={{
-        borderColor: selected
-          ? ACCENT
-          : "color-mix(in oklab, var(--v3-ink) 18%, transparent)",
-        // The selected card lifts rather than inverting: inverting it would
-        // swap the portrait's ground out from under it mid-choice.
-        boxShadow: selected
-          ? `0 0 0 2px ${ACCENT}, 0 18px 40px -22px rgba(0,0,0,0.5)`
-          : "none",
-      }}
+      className="flex items-center gap-3 rounded-xl border border-current/15 p-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+      style={
+        selected
+          ? { borderColor: FILL, boxShadow: `0 0 0 1px ${FILL}` }
+          : undefined
+      }
     >
-      <TutorPortrait
-        image={tutor.image}
-        initials={tutor.initials}
-        name={tutor.name}
-        className="w-[6.75rem] shrink-0 self-start rounded-md sm:w-[8.25rem]"
-      />
-
-      <span className="flex min-w-0 flex-1 flex-col gap-1">
+      {portrait}
+      {/* The rate sits on the title's line rather than beside the whole block,
+          so the note keeps the full width of the tile. Put it alongside the
+          note instead and "Algebra through calculus" truncates to "Algebra
+          thr…", which trades the more useful line for the shorter one. */}
+      <span className="min-w-0 flex-1">
         <span className="flex items-baseline justify-between gap-2">
-          <span className="font-[family-name:var(--font-editorial)] text-[1.875rem] leading-tight tracking-tight sm:text-[2.175rem]">
-            {tutor.name}
+          <span className="truncate text-[1.05rem] font-semibold tracking-tight">
+            {title}
           </span>
-          {/* The selected mark, matching the plates on the courses page. */}
-          <span
-            aria-hidden
-            className="size-2 shrink-0 rounded-full transition-opacity"
-            style={{
-              backgroundColor: ACCENT,
-              opacity: selected ? 1 : 0,
-            }}
-          />
+          {/* Literal space: the flex row is visual only, and without it a
+              screen reader announces "Maggie$225/hr". */}
+          {meta ? (
+            <>
+              {" "}
+              <span className="shrink-0 text-[0.9rem] font-semibold tabular-nums opacity-70">
+                {meta}
+              </span>
+            </>
+          ) : null}
         </span>
-        <span className="v3-micro uppercase opacity-60">{tutor.focus}</span>
-
-        <span className="mt-1.5 flex flex-col gap-1 border-t border-current/12 pt-1.5">
-          {tutor.credentials.map((line) => (
-            <span
-              key={line}
-              className="flex items-baseline gap-2 text-[1.425rem] leading-snug opacity-80"
-            >
-              <span
-                aria-hidden
-                className="mt-[0.4em] size-1 shrink-0 rounded-full"
-                style={{ backgroundColor: ACCENT, opacity: 0.7 }}
-              />
-              {line}
-            </span>
-          ))}
-        </span>
+        <span className="block truncate text-[0.9rem] opacity-60">{note}</span>
+      </span>
+      <span
+        aria-hidden
+        className="grid size-5 shrink-0 place-items-center rounded-full border border-current/25"
+        style={selected ? { backgroundColor: FILL, borderColor: FILL } : undefined}
+      >
+        {selected ? <Check className="size-3 text-white" /> : null}
       </span>
     </button>
   );
 }
 
-export function BookingPanel({ subject, heading, blurb, tracks, tutors }: Props) {
-  const [trackIndex, setTrackIndex] = useState(0);
-  const [tutorIndex, setTutorIndex] = useState(0);
+export function BookingPanel({
+  subject,
+  heading,
+  blurb,
+  trackLabel = "Choose a course",
+  tracks,
+  tutors,
+}: Props) {
+  // "Choose an exam" → "Exam". Stripping the verb leaves it lowercase, which
+  // reads as a typo beside Tutor / Time / Confirm.
+  const trackStep = trackLabel.replace(/^Choose an? /, "");
+  const STEPS = [
+    trackStep.charAt(0).toUpperCase() + trackStep.slice(1),
+    "Tutor",
+    "Time",
+    "Checkout",
+  ];
 
-  // "No preference" is the last option but not a card: it has no portrait and no
-  // person to describe, and a fourth tile holding a dash would read as a tutor
-  // whose photo failed to load. A full-width bar under the row is unmistakably
-  // the opt-out.
-  const allTutors = [...tutors, ANY_TUTOR];
-  const anyIndex = allTutors.length - 1;
+  const [step, setStep] = useState(0);
+  const [trackIndex, setTrackIndex] = useState(0);
+  const [tutor, setTutor] = useState<BookingTutor | null>(tutors[0] ?? null);
+  const [day, setDay] = useState(DAYS[0]);
+  const [time, setTime] = useState<string | null>(null);
+
   const track = tracks[trackIndex];
-  const tutor = allTutors[tutorIndex];
+  const last = step === STEPS.length - 1;
+  // Only the time step can be incomplete; the others start on a valid choice.
+  const canAdvance = step !== 2 || time !== null;
 
   return (
-    <div className="mx-auto max-w-6xl">
-      <div className="flex items-baseline justify-between gap-4 border-b border-current/20 pb-2.5">
-        <h2 className="font-[family-name:var(--font-editorial)] text-[3.375rem] tracking-tight sm:text-[4.125rem]">
+    <div className="mx-auto max-w-5xl">
+      {/* The section keeps the page's voice; the card below it does not. */}
+      <div className="flex items-baseline justify-between gap-4 border-b border-current/20 pb-2">
+        <h2 className="font-[family-name:var(--font-editorial)] text-[2.3rem] tracking-tight sm:text-[2.8rem]">
           {heading}
         </h2>
         <span className="v3-micro hidden shrink-0 uppercase opacity-50 sm:inline">
-          Two choices, then send
+          Four steps to checkout
         </span>
       </div>
+      <p className="v3-body mt-2 max-w-2xl opacity-75">{blurb}</p>
 
-      <p className="v3-body mt-2.5 max-w-2xl opacity-75">{blurb}</p>
-
-      {/* ── 01 · Courses, horizontally ── */}
-      <div className="mt-5">
-        <StepHead step="01" title="Choose a course" />
-        <div
-          role="radiogroup"
-          aria-label="Course"
-          className="mt-2.5 grid grid-cols-2 gap-2.5 sm:grid-cols-4"
-        >
-          {tracks.map((t, i) => (
-            <TrackChoice
-              key={t.name}
-              selected={i === trackIndex}
-              onSelect={() => setTrackIndex(i)}
-              track={t}
-            />
-          ))}
+      {/* ── The widget ── */}
+      <div
+        className="mt-4 overflow-hidden rounded-2xl border border-current/15"
+        style={{ backgroundColor: "var(--v3-card)" }}
+      >
+        {/* Progress */}
+        <div className="border-b border-current/12 px-4 py-3 sm:px-5">
+          <ol className="flex items-center gap-2">
+            {STEPS.map((name, i) => {
+              const done = i < step;
+              const current = i === step;
+              return (
+                <li key={name} className="flex flex-1 items-center gap-2">
+                  <span
+                    aria-current={current ? "step" : undefined}
+                    className="grid size-6 shrink-0 place-items-center rounded-full border border-current/25 text-[0.75rem] font-semibold"
+                    style={
+                      done || current
+                        ? { backgroundColor: FILL, borderColor: FILL, color: "#fff" }
+                        : undefined
+                    }
+                  >
+                    {done ? <Check className="size-3.5" /> : i + 1}
+                  </span>
+                  <span
+                    className={`hidden text-[0.85rem] font-medium sm:inline ${
+                      current ? "" : "opacity-55"
+                    }`}
+                  >
+                    {name}
+                  </span>
+                  {i < STEPS.length - 1 ? (
+                    <span
+                      aria-hidden
+                      className="h-px flex-1 bg-current/15"
+                      style={done ? { backgroundColor: FILL } : undefined}
+                    />
+                  ) : null}
+                </li>
+              );
+            })}
+          </ol>
         </div>
-      </div>
 
-      {/* ── 02 · Tutors, as cards ── */}
-      <div className="mt-5">
-        <StepHead step="02" title="Choose a tutor" />
-        <div role="radiogroup" aria-label="Tutor" className="mt-2.5">
-          <div className="grid grid-cols-1 gap-2.5 md:grid-cols-3">
-            {tutors.map((t, i) => (
-              <TutorChoice
-                key={t.name}
-                selected={i === tutorIndex}
-                onSelect={() => setTutorIndex(i)}
-                tutor={t}
-              />
-            ))}
+        <div className="grid sm:grid-cols-[1fr_13rem]">
+          {/* Current step */}
+          <div className="min-h-[13.5rem] p-4 sm:p-5">
+            {step === 0 ? (
+              <div role="radiogroup" aria-label={trackLabel} className="grid gap-2 sm:grid-cols-2">
+                {tracks.map((t, i) => (
+                  <Tile
+                    key={t.name}
+                    selected={i === trackIndex}
+                    onSelect={() => setTrackIndex(i)}
+                    title={t.name}
+                    note={t.note}
+                  />
+                ))}
+              </div>
+            ) : null}
+
+            {step === 1 ? (
+              <div role="radiogroup" aria-label="Tutor" className="grid gap-2 sm:grid-cols-2">
+                {tutors.map((t) => (
+                  <Tile
+                    key={t.name}
+                    selected={t.name === tutor?.name}
+                    onSelect={() => setTutor(t)}
+                    title={t.name}
+                    note={t.focus}
+                    // The rate belongs on this step because this is the step
+                    // where it is a decision — the tiers exist so a family can
+                    // choose, and they cannot choose against a number they have
+                    // to leave the panel to find.
+                    meta={
+                      rateFor(t.name) ? `$${rateFor(t.name)}/hr` : undefined
+                    }
+                    portrait={
+                      <TutorPortrait
+                        image={t.image}
+                        initials={t.initials}
+                        name={t.name}
+                        className="aspect-square w-[2.75rem] shrink-0 rounded-full"
+                      />
+                    }
+                  />
+                ))}
+                <Tile
+                  selected={tutor === null}
+                  onSelect={() => setTutor(null)}
+                  title="No preference"
+                  note="Matched to the student"
+                />
+              </div>
+            ) : null}
+
+            {step === 2 ? (
+              <>
+                <p className="text-[0.9rem] opacity-60">
+                  Indicative weekly availability — we confirm the exact date by
+                  email.
+                </p>
+                <div role="tablist" aria-label="Day" className="mt-3 flex flex-wrap gap-1.5">
+                  {DAYS.map((d) => {
+                    const selected = d === day;
+                    return (
+                      <button
+                        key={d}
+                        role="tab"
+                        aria-selected={selected}
+                        onClick={() => {
+                          setDay(d);
+                          setTime(null);
+                        }}
+                        className="rounded-lg border border-current/20 px-3 py-1.5 text-[0.9rem] font-medium transition-colors"
+                        style={
+                          selected
+                            ? { backgroundColor: FILL, borderColor: FILL, color: "#fff" }
+                            : undefined
+                        }
+                      >
+                        {d.slice(0, 3)}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
+                  {slotsFor(day).map(({ time: t, available }) => {
+                    const selected = t === time;
+                    return (
+                      <button
+                        key={t}
+                        type="button"
+                        disabled={!available}
+                        onClick={() => setTime(t)}
+                        aria-pressed={selected}
+                        className="rounded-lg border border-current/20 py-2 text-[0.9rem] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-30"
+                        style={
+                          selected
+                            ? { backgroundColor: FILL, borderColor: FILL, color: "#fff" }
+                            : available
+                              ? { borderColor: LINE, color: LINE }
+                              : undefined
+                        }
+                      >
+                        {t}
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            ) : null}
+
+            {step === 3 ? (
+              <>
+                {/* The button says Checkout; this says what actually happens.
+                    No card is taken and no slot is held — the action still
+                    composes an enquiry — and a visitor who reads "Checkout"
+                    and expects a payment screen has to be told so here rather
+                    than discovering it when their mail client opens. Replace
+                    this line at the same time as the mailto, not before. */}
+                <p className="text-[0.9rem] opacity-60">
+                  No payment is taken here. This opens an email with your
+                  session details so we can confirm the time with you.
+                </p>
+                <div className="mt-3 rounded-xl border border-current/15 p-4">
+                  <p className="text-[1.3rem] font-semibold tracking-tight">
+                    {track.name}
+                  </p>
+                  <ul className="mt-2 space-y-1.5 text-[0.95rem] opacity-70">
+                    <li className="flex items-center gap-2.5">
+                      <Clock aria-hidden className="size-4 shrink-0" />
+                      {day}
+                      {time ? `, ${time}` : ""}
+                    </li>
+                    <li className="flex items-center gap-2.5">
+                      <Check aria-hidden className="size-4 shrink-0" />
+                      {tutor ? tutor.name : "No preference"}
+                    </li>
+                  </ul>
+
+                  {/* A step called Checkout with no number on it reads as a
+                      bait-and-switch. The rate, not a total: a total depends on
+                      whether the family is on a membership, and that is not
+                      decided in this panel. */}
+                  {rateFor(tutor?.name) ? (
+                    <p className="mt-3 border-t border-current/12 pt-3 text-[0.95rem]">
+                      <span className="font-semibold">
+                        ${rateFor(tutor?.name)}
+                      </span>
+                      <span className="opacity-60">
+                        {" "}
+                        per hour, online. Memberships are cheaper per session
+                        —{" "}
+                      </span>
+                      <Link
+                        href="/pricing"
+                        className="underline decoration-current/30 underline-offset-4 opacity-60 transition-opacity hover:opacity-100"
+                      >
+                        see pricing
+                      </Link>
+                      <span className="opacity-60">.</span>
+                    </p>
+                  ) : null}
+                </div>
+                <a
+                  href={enquiryHref(subject, track, tutor, day, time)}
+                  className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg px-5 py-3 text-[1rem] font-semibold text-white transition-opacity hover:opacity-90 sm:w-auto"
+                  style={{ backgroundColor: FILL }}
+                >
+                  Checkout
+                  <ArrowRight aria-hidden className="size-4" />
+                </a>
+              </>
+            ) : null}
           </div>
 
+          {/* Running summary */}
+          <aside className="border-t border-current/12 bg-current/[0.03] p-4 sm:border-t-0 sm:border-l">
+            <p className="text-[0.8rem] font-semibold tracking-wide uppercase opacity-70">
+              Your session
+            </p>
+            <div className="mt-2">
+              <SummaryRow label="Course" value={track.name} />
+              <SummaryRow label="Tutor" value={tutor ? tutor.name : "No preference"} />
+              <SummaryRow label="Time" value={time ? `${day}, ${time}` : null} />
+              {SHOW_PRICING ? (
+                <SummaryRow
+                  label="Rate"
+                  value={
+                    rateFor(tutor?.name)
+                      ? `$${rateFor(tutor?.name)}/hr`
+                      : // "No preference" is a real choice here, and the honest
+                        // answer to what it costs is that it depends who we
+                        // match — not a number.
+                        "Depends on tutor"
+                  }
+                />
+              ) : null}
+            </div>
+            <Link
+              href="/tutors"
+              className="mt-3 inline-block text-[0.8rem] uppercase underline decoration-current/30 underline-offset-4 opacity-55 transition-opacity hover:opacity-100"
+            >
+              Tutor profiles &rarr;
+            </Link>
+          </aside>
+        </div>
+
+        {/* Navigation */}
+        <div className="flex items-center justify-between gap-3 border-t border-current/12 px-4 py-3 sm:px-5">
           <button
             type="button"
-            role="radio"
-            aria-checked={tutorIndex === anyIndex}
-            onClick={() => setTutorIndex(anyIndex)}
-            className="mt-2.5 flex w-full items-center justify-between gap-3 rounded-lg border px-4 py-2.5 text-left transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--v3-accent)]"
-            style={{
-              borderColor:
-                tutorIndex === anyIndex
-                  ? ACCENT
-                  : "color-mix(in oklab, var(--v3-ink) 18%, transparent)",
-              boxShadow:
-                tutorIndex === anyIndex ? `0 0 0 2px ${ACCENT}` : "none",
-            }}
+            onClick={() => setStep((s) => Math.max(0, s - 1))}
+            disabled={step === 0}
+            className="inline-flex items-center gap-2 rounded-lg border border-current/20 px-4 py-2 text-[0.9rem] font-medium transition-colors disabled:opacity-30"
           >
-            <span className="font-[family-name:var(--font-editorial)] text-[2.025rem] leading-tight tracking-tight">
-              {ANY_TUTOR.name}
-            </span>
-            <span className="v3-micro uppercase opacity-60">
-              {ANY_TUTOR.focus}
-            </span>
+            <ArrowLeft aria-hidden className="size-4" />
+            Back
           </button>
+
+          {!last ? (
+            <button
+              type="button"
+              onClick={() => setStep((s) => s + 1)}
+              disabled={!canAdvance}
+              className="inline-flex items-center gap-2 rounded-lg px-5 py-2 text-[0.9rem] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+              style={{ backgroundColor: FILL }}
+            >
+              Continue
+              <ArrowRight aria-hidden className="size-4" />
+            </button>
+          ) : (
+            <span className="text-[0.8rem] opacity-55">
+              Nothing is reserved until we reply.
+            </span>
+          )}
         </div>
-      </div>
-
-      {/* ── The ask ──
-          A solid accent bar rather than a pill floating in whitespace: this is
-          the one thing on the panel a visitor is meant to do, and it should not
-          have to be found.
-
-          Stuck to the bottom of the panel because the panel is a fixed viewport
-          that hides its scrollbar: on a short window the tutor cards push this
-          past the fold, and there would be no scrollbar to suggest anything was
-          down there. Sticky, it is on screen from the moment the panel arrives
-          regardless of window height. The bar is opaque, so the content
-          scrolling under it stays legible.
-
-          The selection is read back inside the bar, so what the button will send
-          is never in doubt. Announced politely — it changes under the reader. */}
-      <div
-        className="sticky bottom-0 z-10 mt-5 flex flex-col items-stretch gap-3 rounded-xl p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:p-5"
-        style={{ backgroundColor: ACCENT, color: PAPER }}
-      >
-        {/* The spaces are literal rather than margins: this is a live region,
-            and JSX drops the whitespace between elements on separate lines, so
-            margin-only spacing announces as "Timed writingwithSofia O.". */}
-        <p aria-live="polite" className="min-w-0">
-          <span className="v3-micro block uppercase opacity-70">
-            You are requesting
-          </span>
-          <span className="mt-1 block font-[family-name:var(--font-editorial)] text-[2.25rem] leading-tight tracking-tight sm:text-[2.775rem]">
-            {track.name}
-            <span className="opacity-70">{" with "}</span>
-            {tutor.name}
-          </span>
-        </p>
-
-        <a
-          href={enquiryHref(subject, track, tutor)}
-          className="group inline-flex shrink-0 items-center justify-center gap-3 rounded-lg px-7 py-4 text-center font-[family-name:var(--font-editorial)] text-[2.1rem] leading-none tracking-tight transition-transform duration-200 hover:scale-[1.02] focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[var(--v3-paper)] sm:text-[2.325rem]"
-          style={{ backgroundColor: PAPER, color: INK }}
-        >
-          Request this session
-          <span className="inline-block transition-transform duration-300 group-hover:translate-x-1">
-            &rarr;
-          </span>
-        </a>
       </div>
     </div>
   );

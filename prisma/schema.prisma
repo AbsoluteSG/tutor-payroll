@@ -43,6 +43,27 @@ enum ScheduledClassStatus {
   CANCELED
 }
 
+enum ChatRole {
+  USER
+  ASSISTANT
+  /// A real member of staff, typing in the console at /admin/chat.
+  STAFF
+}
+
+/// Who the visitor is currently talking to.
+///
+/// A conversation starts on the assistant and can be escalated once. WAITING is
+/// the queue — the visitor has asked for a person and nobody has picked up yet
+/// — and it is the state the whole feature lives or dies on: a visitor left in
+/// it with no one coming is worse than never offering a person at all, which is
+/// why the widget shows a queue position and an offline path out of it.
+enum ConversationMode {
+  BOT
+  WAITING
+  LIVE
+  ENDED
+}
+
 model User {
   id              String   @id @default(cuid())
   email           String   @unique
@@ -60,6 +81,9 @@ model User {
   classSessions   ClassSession[]
   payments        TutorPayment[]
   scheduledClasses ScheduledClass[]
+  chatConversations ChatConversation[]
+  chatMessages      ChatMessage[]
+  chatPresence      StaffPresence?
 }
 
 model InviteToken {
@@ -187,6 +211,79 @@ model ScheduledClass {
 
   @@index([tutorId, scheduledAt])
   @@index([clientId, scheduledAt])
+}
+
+/// One visitor's session with the chat box on the marketing site.
+///
+/// Anonymous: nobody is signed in on those pages, so the id held in the
+/// visitor's browser is the only thing identifying them. That makes the id a
+/// bearer token — anyone holding it can read and post to the conversation — so
+/// it must stay unguessable, and nothing sensitive should ever be typed into a
+/// chat that is authenticated this way.
+model ChatConversation {
+  id           String           @id @default(cuid())
+  /// Marketing page the box was opened on, so a person picking it up can see
+  /// what the visitor was reading.
+  path         String?
+  mode         ConversationMode @default(BOT)
+  /// Given when the visitor asks for a person, so staff know who they have and
+  /// can follow up if the visitor closes the tab mid-conversation.
+  visitorName  String?
+  visitorEmail String?
+
+  /// The staff member who picked this up. One at a time: two people answering
+  /// the same visitor in parallel reads as chaos at the other end.
+  claimedById String?
+  claimedAt   DateTime?
+  /// Set when either side ends the chat.
+  endedAt     DateTime?
+  /// Last time the visitor's browser polled. Drives the "visitor has gone"
+  /// signal in the console, so staff are not left typing to an empty room.
+  visitorSeenAt DateTime?
+  /// Bumped whenever the visitor asks for a person, so the queue orders by
+  /// how long each one has actually been waiting rather than when the
+  /// conversation first opened with the assistant.
+  waitingSince  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  claimedBy User?         @relation(fields: [claimedById], references: [id], onDelete: SetNull)
+  messages  ChatMessage[]
+
+  @@index([mode, waitingSince])
+  @@index([createdAt])
+}
+
+model ChatMessage {
+  id             String   @id @default(cuid())
+  conversationId String
+  role           ChatRole
+  content        String
+  /// Set when role is STAFF, so a transcript records who actually replied.
+  authorId       String?
+  createdAt      DateTime @default(now())
+
+  conversation ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  author       User?            @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([conversationId, createdAt])
+}
+
+/// Who is sitting at the chat console right now.
+///
+/// The marketing site has to answer "is anyone actually there" *before* it
+/// offers a live chat, and it has to answer it correctly from any server
+/// instance — so this is a table rather than a variable. The console heartbeats
+/// while it is open; a row that has not been touched recently means that person
+/// has gone, whether they closed the tab politely or their laptop shut.
+model StaffPresence {
+  userId     String   @id
+  lastSeenAt DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([lastSeenAt])
 }
 
 /// A shareable "pay me" link for a client. The id doubles as the public

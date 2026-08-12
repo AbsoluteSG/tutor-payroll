@@ -5,11 +5,11 @@ import { usePathname } from "next/navigation";
 // The fade overlay is tuned to the app's bg-background token, so it bands
 // against standalone marketing pages that set their own background — skip it
 // on those routes regardless of whether they're light or dark.
-const LIGHT_THEMED_ROUTES = ["/v2", "/v3", "/v4"];
+const LIGHT_THEMED_ROUTES = ["/v2", "/", "/v4"];
 
 export function BackgroundFade() {
   const pathname = usePathname();
-  // Prefix match so nested marketing routes (e.g. /v3/courses) are covered too.
+  // Prefix match so nested marketing routes (e.g. /courses) are covered too.
   const isMarketing = LIGHT_THEMED_ROUTES.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`)
   );

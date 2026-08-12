@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { CreationDotField } from "./v3/creation-dot-field";
 import { BookingPanel } from "./v3/booking-panel";
+import { JARED, ELLA, MAGGIE, LEAH } from "./roster";
 import {
   SubjectPage,
   SectionHead,
@@ -43,26 +44,15 @@ const TRACKS = [
   { name: "Calculus AB / BC", note: "Grades 11–12" },
 ];
 
-/** PLACEHOLDER credentials — see the warning in v3/booking-panel.tsx. */
+/**
+ * The tutors offering this subject, from the shared roster. Real people only —
+ * see roster.ts. This page previously listed three invented ones.
+ */
 const TUTORS = [
-  {
-    initials: "AV",
-    name: "Amara V.",
-    focus: "Calculus",
-    credentials: ["M.S. Mathematics, NYU", "9 years teaching AP Calculus", "AP reader, Calculus BC"],
-  },
-  {
-    initials: "TK",
-    name: "Theo K.",
-    focus: "Algebra & geometry",
-    credentials: ["B.A. Mathematics, Hunter", "NYS certified, grades 7–12", "6 years classroom"],
-  },
-  {
-    initials: "RN",
-    name: "Rosa N.",
-    focus: "Precalculus",
-    credentials: ["M.Ed. Teachers College", "11 years precalculus & trig", "Regents item reviewer"],
-  },
+  { ...MAGGIE, focus: "Algebra, geometry & college prep" },
+  { ...JARED, focus: "Algebra through calculus" },
+  { ...ELLA, focus: "Geometry & trigonometry" },
+  { ...LEAH, focus: "Algebra" },
 ];
 
 const QUADRIVIUM = [
@@ -280,7 +270,7 @@ export function MathPageV3() {
                   </span>
                 </a>
                 <Link
-                  href="/v3/courses"
+                  href="/courses"
                   className="v3-label inline-flex items-center rounded-full border border-current/25 px-7 py-4 font-mono uppercase transition-colors hover:border-current/60"
                 >
                   Other courses

@@ -15,6 +15,23 @@ import { useEffect, useState } from "react";
 const PAPER = "var(--v3-paper)";
 const INK = "var(--v3-ink)";
 
+/** Dissolves the field toward the left and right edges. */
+const EDGE_FADE =
+  "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.28) 9%, #000 34%, #000 66%, rgba(0,0,0,0.28) 91%, transparent 100%)";
+
+/**
+ * Thins the field out behind the headline.
+ *
+ * There used to be a radial wash of the ground colour painted on top of the
+ * dots here, which read as exactly what it was: a bright ellipse hanging in the
+ * middle of the page. This removes the dots instead of covering them, so the
+ * type gets the same clean field with nothing drawn over it — the only visible
+ * change is that the halftone thins where the words are, which is what a
+ * printed plate does anyway.
+ */
+const TYPE_CLEARING =
+  "radial-gradient(ellipse 40rem 19rem at 50% 50%, transparent 38%, rgba(0,0,0,0.45) 68%, #000 92%)";
+
 export function HeroPlate() {
   const [offset, setOffset] = useState({ x: 0, y: 0 });
 
@@ -56,10 +73,12 @@ export function HeroPlate() {
             backgroundImage: `radial-gradient(${INK} 1.15px, transparent 1.15px)`,
             backgroundSize: "7px 7px",
             opacity: 0.5,
-            maskImage:
-              "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.28) 9%, #000 34%, #000 66%, rgba(0,0,0,0.28) 91%, transparent 100%)",
-            WebkitMaskImage:
-              "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.28) 9%, #000 34%, #000 66%, rgba(0,0,0,0.28) 91%, transparent 100%)",
+            // Two masks intersected: a dot survives only where the edge fade
+            // AND the centre clearing both allow it.
+            maskImage: `${EDGE_FADE}, ${TYPE_CLEARING}`,
+            WebkitMaskImage: `${EDGE_FADE}, ${TYPE_CLEARING}`,
+            maskComposite: "intersect",
+            WebkitMaskComposite: "source-in",
           }}
         />
       </div>

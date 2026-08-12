@@ -15,9 +15,24 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+/**
+ * The public default. Every marketing page sets its own title; this is what
+ * anything without one inherits, including the homepage — which until the
+ * marketing site moved to the root was announcing itself as "Tutor Payroll —
+ * class submissions, balances, and payouts", the internal app's metadata, on
+ * the front door.
+ *
+ * The signed-in app (/admin, /dashboard) inherits it too. That is harmless —
+ * those routes are behind auth and not indexed — but they should carry a
+ * noindex before anything crawls them.
+ */
 export const metadata: Metadata = {
-  title: "Tutor Payroll",
-  description: "Class submissions, balances, and payouts",
+  title: {
+    default: "Borough Prep — An independent tutoring studio",
+    template: "%s",
+  },
+  description:
+    "Online one-to-one tutoring from Brooklyn: English, mathematics, computer science, and preparation for the SHSAT, SAT, and ACT.",
 };
 
 export default function RootLayout({
