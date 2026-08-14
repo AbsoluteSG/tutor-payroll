@@ -37,6 +37,80 @@ async function main() {
     },
   });
 
+  // ── Bookable tutors ───────────────────────────────────────────────────────
+  // Public booking needs more than a tutor account. The listing gate in
+  // lib/booking/tutors.ts requires a slug (to tie the row to its roster entry),
+  // a tier (to price the session), a defaultTutorRate (so commit can build the
+  // RateCard the tutor needs to log the class afterwards), and the manager's
+  // explicit `bookable`. On top of that, /api/booking/slots returns nothing
+  // without at least one AvailabilityRule.
+  //
+  // Miss any one and the flow fails silently in a different place — no tutors
+  // offered, or a tutor with no times, or a 404 at checkout. Seeding them is
+  // what makes the booking flow exercisable end to end on a fresh database.
+  //
+  // The slugs must match entries in components/marketing/roster.ts: the booking
+  // panel joins the two, the roster supplying the face and the copy and this
+  // supplying the identity and the money.
+  const BOOKABLE_TUTORS: {
+    slug: string;
+    name: string;
+    email: string;
+    tier: "JUNIOR" | "MID" | "SENIOR";
+    tutorRate: Prisma.Decimal;
+  }[] = [
+    { slug: "jared", name: "Jared", email: "jared@example.com", tier: "SENIOR", tutorRate: D(60) },
+    {
+      slug: "samantha-yershov",
+      name: "Samantha Yershov",
+      email: "samantha@example.com",
+      tier: "MID",
+      tutorRate: D(45),
+    },
+  ];
+
+  /** Weekday afternoons and Saturday mornings, in the tutor's own zone. */
+  const WEEKLY_AVAILABILITY = [
+    ...[1, 2, 3, 4, 5].map((weekday) => ({
+      weekday,
+      startMinute: 16 * 60,
+      endMinute: 20 * 60,
+    })),
+    { weekday: 6, startMinute: 10 * 60, endMinute: 14 * 60 },
+  ];
+
+  for (const t of BOOKABLE_TUTORS) {
+    const bookingFields = {
+      name: t.name,
+      role: "TUTOR" as const,
+      active: true,
+      bookable: true,
+      slug: t.slug,
+      tier: t.tier,
+      defaultTutorRate: t.tutorRate,
+      timeZone: "America/New_York",
+    };
+    const row = await prisma.user.upsert({
+      where: { email: t.email },
+      // Also on update, so re-running repairs a tutor seeded before these
+      // columns existed rather than leaving them unbookable.
+      update: bookingFields,
+      create: {
+        email: t.email,
+        passwordHash: await bcrypt.hash("tutor1234", 10),
+        ...bookingFields,
+      },
+    });
+
+    // Replaced rather than appended: re-running the seed must not stack
+    // duplicate windows, which would offer the same slot twice.
+    await prisma.availabilityRule.deleteMany({ where: { tutorId: row.id } });
+    await prisma.availabilityRule.createMany({
+      data: WEEKLY_AVAILABILITY.map((w) => ({ tutorId: row.id, ...w })),
+    });
+    console.log(`Bookable tutor: ${t.name} (/${t.slug}) — weekdays 4–8pm, Sat 10am–2pm ET`);
+  }
+
   const smith = await prisma.client.upsert({
     where: { paymentName: "John Smith" },
     update: {},
