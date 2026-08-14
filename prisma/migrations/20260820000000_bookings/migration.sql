@@ -135,11 +135,19 @@ CREATE EXTENSION IF NOT EXISTS btree_gist;
 -- `[)` is half-open, so a slot ending at 4:00 does not collide with one
 -- starting at 4:00. `releasedAt IS NULL` is the liveness predicate — see the
 -- CHECK below for why that rather than a list of statuses.
+--
+-- tsrange, NOT tstzrange. These columns are TIMESTAMP(3) — Prisma's mapping for
+-- DateTime, and what every other timestamp in this schema is. Handing a
+-- `timestamp` to tstzrange() makes Postgres cast it using the session's
+-- TimeZone, which is STABLE rather than IMMUTABLE, and an index expression may
+-- not be stable: the constraint is rejected outright with 42P17. The values are
+-- all UTC instants written by Prisma, so they share one frame and comparing
+-- them as naive timestamps gives exactly the intended overlap semantics.
 ALTER TABLE "BookingSlot"
   ADD CONSTRAINT "BookingSlot_no_overlap"
   EXCLUDE USING gist (
     "tutorId" WITH =,
-    tstzrange("startsAt", "endsAt", '[)') WITH &&
+    tsrange("startsAt", "endsAt", '[)') WITH &&
   ) WHERE ("releasedAt" IS NULL);
 
 -- Keeps `releasedAt` and `status` from drifting apart.
