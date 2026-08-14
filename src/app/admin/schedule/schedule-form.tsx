@@ -94,7 +94,11 @@ export function ScheduleForm({ tutors }: { tutors: TutorOption[] }) {
 
       <div className="grid gap-2 sm:grid-cols-2">
         <div className="grid gap-2">
-          <Label htmlFor="scheduledAt">Date &amp; time</Label>
+          {/* Says the zone out loud. The value is a bare wall clock, and the
+              action reads it as Brooklyn time — a manager travelling, or a
+              host in another region, would otherwise have no way to know
+              which clock this box means. */}
+          <Label htmlFor="scheduledAt">Date &amp; time (ET)</Label>
           <Input id="scheduledAt" name="scheduledAt" type="datetime-local" required />
         </div>
         <div className="grid gap-2">

@@ -10,7 +10,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { tutorRequestHref } from "./enquiry";
+import { EnquiryForm } from "./enquiry-form";
 import {
   SHOW_PRICING,
   TIER_BY_ID,
@@ -562,16 +562,29 @@ function TutorProfile({
             </div>
 
             <div className="mt-8 border-t border-current/12 pt-5">
-              <a
-                href={tutorRequestHref(tutor.name)}
-                className="group/cta inline-flex items-center gap-2.5 rounded-full px-6 py-3 font-mono text-[0.64rem] tracking-[0.16em] uppercase"
-                style={{ backgroundColor: ACCENT, color: PAPER }}
-              >
-                Request this tutor
-                <span className="inline-block transition-transform duration-300 group-hover/cta:translate-x-1">
-                  &rarr;
-                </span>
-              </a>
+              {/* `slug` is passed through so the lead records which tutor was
+                  asked for. It is a plain string on the enquiry, not a foreign
+                  key — see the Enquiry model. */}
+              <EnquiryForm
+                fontClass={fontClass}
+                context={{
+                  subject: `Request — ${tutor.name}`,
+                  tutorSlug: tutor.slug,
+                  intro: `Tell us what your student needs and we'll call you back about working with ${tutor.name}.`,
+                }}
+                trigger={
+                  <button
+                    type="button"
+                    className="group/cta inline-flex items-center gap-2.5 rounded-full px-6 py-3 font-mono text-[0.64rem] tracking-[0.16em] uppercase"
+                    style={{ backgroundColor: ACCENT, color: PAPER }}
+                  >
+                    Request this tutor
+                    <span className="inline-block transition-transform duration-300 group-hover/cta:translate-x-1">
+                      &rarr;
+                    </span>
+                  </button>
+                }
+              />
             </div>
           </div>
         </div>

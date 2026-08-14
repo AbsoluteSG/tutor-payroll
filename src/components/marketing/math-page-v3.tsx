@@ -1,8 +1,9 @@
 "use client";
+import type { BookableTutor } from "@/lib/booking/tutors";
 
 import Link from "next/link";
 import { CreationDotField } from "./v3/creation-dot-field";
-import { BookingPanel } from "./v3/booking-panel";
+import { BookingPanel, type BookingTrack } from "./v3/booking-panel";
 import { JARED, ELLA, MAGGIE, LEAH } from "./roster";
 import {
   SubjectPage,
@@ -37,11 +38,11 @@ const LADDER = [
   { numeral: "VI", name: "Calculus", note: "Rates of change and accumulation, AB and BC" },
 ];
 
-const TRACKS = [
-  { name: "Pre-algebra & Algebra I", note: "Grades 6–9" },
-  { name: "Geometry", note: "Grades 8–10" },
-  { name: "Algebra II & precalculus", note: "Grades 9–11" },
-  { name: "Calculus AB / BC", note: "Grades 11–12" },
+const TRACKS: BookingTrack[] = [
+  { name: "Pre-algebra & Algebra I", note: "Grades 6–9", mark: "prealgebra" },
+  { name: "Geometry", note: "Grades 8–10", mark: "geometry" },
+  { name: "Algebra II & precalculus", note: "Grades 9–11", mark: "precalculus" },
+  { name: "Calculus AB / BC", note: "Grades 11–12", mark: "calculus" },
 ];
 
 /**
@@ -62,7 +63,12 @@ const QUADRIVIUM = [
   { latin: "Astronomia", english: "Motion", note: "Magnitude in motion" },
 ];
 
-export function MathPageV3() {
+export function MathPageV3({
+  /** Who is actually bookable, from the database. Threaded to the panel. */
+  bookable = [],
+}: {
+  bookable?: BookableTutor[];
+} = {}) {
   return (
     <SubjectPage
       plateLabel="Plate 03 — Mathematics"
@@ -136,9 +142,11 @@ export function MathPageV3() {
           key: "book",
           content: (
             <BookingPanel
+              bookable={bookable}
               subject="Mathematics"
               heading="Book a session"
               blurb="Pick the course your student is in — or the one they're about to be — and the tutor you'd like them to work with. We'll come back with times."
+              hue="blue"
               tracks={TRACKS}
               tutors={TUTORS}
             />

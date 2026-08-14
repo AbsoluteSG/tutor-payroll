@@ -13,8 +13,10 @@ export default async function TutorLayout({ children }: { children: React.ReactN
         name={dbUser?.name ?? user.name}
         links={[
           { href: "/dashboard", label: "Dashboard" },
+          { href: "/schedule", label: "Schedule" },
           { href: "/submit", label: "Log a class" },
           { href: "/history", label: "History" },
+          { href: "/settings/availability", label: "Availability" },
           { href: "/settings/payouts", label: "Payouts" },
           { href: "/settings/profile", label: "Profile" },
         ]}

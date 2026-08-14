@@ -1,9 +1,10 @@
 "use client";
+import type { BookableTutor } from "@/lib/booking/tutors";
 
 import Link from "next/link";
 import { CrtScreen } from "./v3/crt-screen";
 import { CircuitField } from "./v3/circuit-field";
-import { BookingPanel } from "./v3/booking-panel";
+import { BookingPanel, type BookingTrack } from "./v3/booking-panel";
 import { JARED } from "./roster";
 import {
   SubjectPage,
@@ -56,11 +57,11 @@ const LADDER = [
   { numeral: "VI", name: "AI-paired workflow", note: "Specify, generate, review, verify — in that order" },
 ];
 
-const TRACKS = [
-  { name: "Intro — C++ by hand", note: "Grades 6–9" },
-  { name: "Systems & memory", note: "Grades 9–12" },
-  { name: "AI-paired engineering", note: "Grades 10–12" },
-  { name: "Contest & USACO", note: "By assessment" },
+const TRACKS: BookingTrack[] = [
+  { name: "Intro — C++ by hand", note: "Grades 6–9", mark: "cpp-intro" },
+  { name: "Systems & memory", note: "Grades 9–12", mark: "systems" },
+  { name: "AI-paired engineering", note: "Grades 10–12", mark: "ai-paired" },
+  { name: "Contest & USACO", note: "By assessment", mark: "usaco" },
 ];
 
 /**
@@ -80,7 +81,12 @@ const DESCENT = [
   { level: "04", name: "Circuit", note: "What moves" },
 ];
 
-export function CsPageV3() {
+export function CsPageV3({
+  /** Who is actually bookable, from the database. Threaded to the panel. */
+  bookable = [],
+}: {
+  bookable?: BookableTutor[];
+} = {}) {
   return (
     <SubjectPage
       plateLabel="Plate 04 — Computer Science"
@@ -126,9 +132,11 @@ export function CsPageV3() {
           key: "book",
           content: (
             <BookingPanel
+              bookable={bookable}
               subject="Computer Science"
               heading="Book a session"
-              blurb="Pick the course your student is taking — or the one they're aiming at — and the tutor you'd like them to work with. Intro assumes no prior programming; the AI-paired track assumes two years of writing code without it."
+              blurb="Pick the course your student is taking, or the one they're aiming at. Intro assumes no prior programming."
+              hue="green"
               tracks={TRACKS}
               tutors={TUTORS}
             />

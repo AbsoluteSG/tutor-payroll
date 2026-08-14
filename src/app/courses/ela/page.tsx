@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { bookableTutors } from "@/lib/booking/tutors";
 import { ElaPageV3 } from "@/components/marketing/ela-page-v3";
 
 export const metadata: Metadata = {
@@ -7,6 +8,8 @@ export const metadata: Metadata = {
     "Close reading, argument, and the essay. Read as though the sentence were built.",
 };
 
-export default function ElaCoursePage() {
-  return <ElaPageV3 />;
+export const revalidate = 300;
+
+export default async function ElaCoursePage() {
+  return <ElaPageV3 bookable={await bookableTutors()} />;
 }

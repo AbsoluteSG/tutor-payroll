@@ -1,11 +1,8 @@
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { BUSINESS_TZ, toISODateInZone } from "@/lib/time-zone";
 import { SubmitClassForm } from "./submit-form";
-
-function toDateInput(d: Date) {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
 
 export default async function SubmitPage({
   searchParams,
@@ -39,7 +36,11 @@ export default async function SubmitPage({
         scheduledId: scheduled.id,
         clientId: scheduled.clientId,
         studentName: scheduled.studentName,
-        date: toDateInput(scheduled.scheduledAt),
+        // The business day, not the server's. Reading `scheduledAt` with
+        // local getters put an 8pm class on the following day whenever the
+        // host ran in UTC, so the tutor logged it against the wrong date and
+        // the earnings landed in the wrong reporting week.
+        date: toISODateInZone(scheduled.scheduledAt, BUSINESS_TZ),
         durationMinutes: String(scheduled.durationMinutes),
       };
     }

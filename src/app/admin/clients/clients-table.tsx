@@ -108,7 +108,17 @@ export function ClientsTable({ clients }: { clients: ClientRow[] }) {
                   )}
                 </TableCell>
                 <TableCell className="text-muted-foreground">{c.displayName}</TableCell>
-                <TableCell className="text-right tabular-nums">{formatUSDPlain(c.owed)}</TableCell>
+                {/* Negative owed is a prepaid balance, not a debt — see the
+                    matching note on the client detail page. */}
+                <TableCell className="text-right tabular-nums">
+                  {parseFloat(c.owed) < 0 ? (
+                    <span className="text-muted-foreground">
+                      {formatUSDPlain(String(-parseFloat(c.owed)))} credit
+                    </span>
+                  ) : (
+                    formatUSDPlain(c.owed)
+                  )}
+                </TableCell>
                 <TableCell className="text-right">
                   <ClientRowActions
                     row={{

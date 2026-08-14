@@ -1,15 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Check, Clock } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Clock, Loader2 } from "lucide-react";
 import { TutorPortrait } from "./tutor-portrait";
-import { DAYS, slotsFor } from "./availability";
-import {
-  SHOW_PRICING,
-  TIER_BY_ID,
-  TUTOR_TIER,
-} from "../pricing";
+import { TrackMark, type TrackMarkKind } from "./track-marks";
+import { EnquiryForm } from "./enquiry-form";
+import { SHOW_PRICING } from "../pricing";
+import type { BookableTutor } from "@/lib/booking/tutors";
+import { BUSINESS_TZ, browserTimeZone, formatInstant } from "@/lib/time-zone";
 
 /**
  * The booking panel — a subject page's second section, immediately after the
@@ -30,31 +29,59 @@ import {
  * The card is deliberately not editorial: sans, soft radii, one blue, the
  * shape people already know from Calendly. It sits on the page's own paper or
  * ink rather than a white ground of its own, so it reads as a widget the page
- * contains rather than one pasted onto it. The section heading above it stays
- * in the page's voice.
+ * contains rather than one pasted onto it.
  *
- * ─── Nothing here reserves anything ─────────────────────────────────────────
- * The days are weekday names, not dates, and the times are a fixed placeholder
- * grid — a real date implies a calendar, and none of this is connected to one.
- * The final action composes a prefilled enquiry, which is why it says "request"
- * throughout and states that nothing is held until the practice replies. Wire a
- * scheduling backend before this carries volume.
+ * ─── Except step one, which is still browsing ───────────────────────────────
+ * The first step is the exception, and deliberately so. By the time somebody is
+ * picking a tutor and a time they have decided to buy, and the scheduling-widget
+ * language is right. But the first step is met before any of that: it is where a
+ * visitor finds out what is on offer at all, which is the same job the course
+ * gallery does one page earlier. So it borrows that page's plates — one per
+ * option, big enough to read at a glance, selected by taking the opposite skin —
+ * minus the fan, because these are choices inside one course rather than four
+ * courses being compared. The running summary is also withheld until then: a
+ * tutor and a rate are not yet decisions, and quoting them next to the very
+ * first question answers something nobody has asked.
  *
- * Tutor names and tracks are PLACEHOLDER, as elsewhere on the marketing site.
+ * ─── This now reserves real time and takes real money ───────────────────────
+ * The times come from /api/booking/slots, which is the tutor's own availability
+ * minus everything already on their calendar. Choosing a start and a number of
+ * weeks holds those exact slots in the database, and Checkout is Stripe. The
+ * panel therefore says "book" rather than "request", and the confirmation
+ * language is about payment rather than about somebody replying.
+ *
+ * A tutor only appears as bookable if a manager has given them a slug, a tier
+ * and a pay rate — see lib/booking/tutors.ts. Anyone else (and "no preference")
+ * routes to the enquiry form instead, because a booking with no tutor cannot
+ * create the rate card the tutor needs to log the class afterwards.
  */
 
 const FILL = "var(--v3-book-fill)";
 const LINE = "var(--v3-book-line)";
-const ENQUIRY_TO = "hello@boroughprep.com";
+
+/** The page palette, for the step-one plates. Same tokens the gallery draws on. */
+const PAPER = "var(--v3-paper)";
+const INK = "var(--v3-ink)";
+const CARD = "var(--v3-card)";
+
+/** The subject hues, shared with the course gallery so a course keeps its colour. */
+export type BookingHue = "orange" | "purple" | "blue" | "green";
+
+/** How many weeks a parent can buy in one go. Matches MAX_SESSIONS server-side. */
+const SESSION_OPTIONS = [1, 2, 4, 6, 8];
 
 export type BookingTrack = {
   /** Short label for the specific course, e.g. "Essay & argument". */
   name: string;
   /** Right-hand qualifier, e.g. "Grades 6–12". */
   note: string;
+  /** The plate's drawing — see track-marks.tsx. */
+  mark?: TrackMarkKind;
 };
 
 export type BookingTutor = {
+  /** Joins this roster entry to its User row. */
+  slug: string;
   /** Rendered as the placeholder portrait's monogram. */
   initials: string;
   name: string;
@@ -65,7 +92,7 @@ export type BookingTutor = {
 };
 
 type Props = {
-  /** Full subject name, used in the enquiry, e.g. "English Language Arts". */
+  /** Full subject name, e.g. "English Language Arts". */
   subject: string;
   heading: string;
   blurb: string;
@@ -73,33 +100,25 @@ type Props = {
   trackLabel?: string;
   tracks: BookingTrack[];
   tutors: BookingTutor[];
+  /**
+   * Who is actually bookable, from the database. Merged with `tutors` by slug:
+   * the roster supplies the photograph and the focus line, this supplies the
+   * price and the ability to transact.
+   */
+  bookable?: BookableTutor[];
+  /**
+   * The subject's hue from the course gallery, carried onto the step-one plates
+   * so a course keeps the colour it was picked by. Falls back to the accent.
+   */
+  hue?: BookingHue;
+  fontClass?: string;
 };
 
-function enquiryHref(
-  subject: string,
-  track: BookingTrack,
-  tutor: BookingTutor | null,
-  day: string,
-  time: string | null
-) {
-  const body = [
-    "I'd like to request a session.",
-    "",
-    `Subject:   ${subject}`,
-    `Course:    ${track.name}`,
-    `Tutor:     ${tutor ? tutor.name : "No preference"}`,
-    `Preferred: ${day}${time ? `, ${time}` : ""}`,
-    "",
-    "Student's name:",
-    "Grade:",
-    "Anything we should know:",
-    "",
-  ].join("\n");
-
-  return `mailto:${ENQUIRY_TO}?subject=${encodeURIComponent(
-    `Session request — ${subject}: ${track.name}`
-  )}&body=${encodeURIComponent(body)}`;
-}
+type SlotResponse = {
+  slots: string[];
+  price: number;
+  tutor: { timeZone: string };
+};
 
 function SummaryRow({ label, value }: { label: string; value: string | null }) {
   return (
@@ -118,19 +137,6 @@ function SummaryRow({ label, value }: { label: string; value: string | null }) {
       </span>
     </div>
   );
-}
-
-/** A large selectable tile, shared by the track and tutor steps. */
-/**
- * A tutor's hourly rate, for the tile and the summary.
- *
- * Returns null when pricing is off or the tutor has no tier, so every caller
- * can render it unconditionally and reverting leaves no empty rows behind.
- */
-function rateFor(name: string | undefined): number | null {
-  if (!SHOW_PRICING || !name) return null;
-  const tier = TUTOR_TIER[name];
-  return tier ? TIER_BY_ID[tier].rate : null;
 }
 
 function Tile({
@@ -196,6 +202,115 @@ function Tile({
   );
 }
 
+/**
+ * A track drawn as a plate, in the course gallery's language.
+ *
+ * The drawing is per track rather than per subject — a balance for the first
+ * equation, a bracketed clause for close reading — because four plates carrying
+ * one subject's mark four times would say nothing about which is which. See
+ * track-marks.tsx. Without one it falls back to a halftone wash, so a track
+ * added later still gets a plate rather than an empty card.
+ */
+function TrackPlate({
+  code,
+  selected,
+  onSelect,
+  title,
+  note,
+  hue,
+  mark,
+}: {
+  code: string;
+  selected: boolean;
+  onSelect: () => void;
+  title: string;
+  note: string;
+  hue: string;
+  mark?: TrackMarkKind;
+}) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={selected}
+      onClick={onSelect}
+      // A selected plate takes the opposite skin rather than having its colours
+      // swapped by hand, so every token inside it — the hue included — resolves
+      // against the ink it has become. Same mechanism as the gallery.
+      className={`${
+        selected ? "v3-invert" : ""
+      // Height in viewport units rather than an aspect ratio. The panel cannot
+      // grow past the viewport, so what is actually scarce here is vertical
+      // room, and sizing from the plate's own width ignores that — it made the
+      // plates tallest on exactly the wide, short windows with the least room
+      // to give. This way they are as large as the stage allows and shrink when
+      // it is short, which is also what keeps the Continue button on screen.
+      } flex h-[clamp(10rem,34svh,22rem)] cursor-pointer flex-col justify-between overflow-hidden rounded-[0.7rem] p-4 text-left transition-[transform,box-shadow] duration-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--v3-accent)] sm:p-5`}
+      style={{
+        backgroundColor: selected
+          ? PAPER
+          : `color-mix(in oklab, ${hue} 5%, ${CARD})`,
+        color: INK,
+        // Shadows stay black in both themes: a plate lifted off a dark ground
+        // still casts a shadow, and tinting it with the ink would make it glow.
+        boxShadow: selected
+          ? "0 22px 48px -18px rgba(0,0,0,0.5)"
+          : "0 10px 26px -18px rgba(0,0,0,0.4)",
+        outline: `1px solid ${
+          selected
+            ? "transparent"
+            : "color-mix(in oklab, var(--v3-ink) 12%, transparent)"
+        }`,
+        transform: selected ? "translateY(-0.3rem)" : undefined,
+      }}
+    >
+      <span className="flex items-start justify-between font-mono text-[0.72rem] tracking-[0.16em] uppercase sm:text-[0.85rem]">
+        <span style={{ color: hue }}>{code}</span>
+        <span
+          aria-hidden
+          className="size-2 rounded-full transition-opacity duration-300 sm:size-2.5"
+          style={{ backgroundColor: hue, opacity: selected ? 1 : 0 }}
+        />
+      </span>
+
+      {/* The mark is drawn in currentColor, so it inverts with the plate on
+          selection without being told which state it is in — same as the
+          gallery's. It is deliberately not given the hue: on a selected plate
+          the ground has become the ink, and the hue was chosen to read against
+          the page rather than against that. */}
+      {mark ? (
+        <TrackMark kind={mark} className="my-2 h-9 w-full opacity-90 sm:h-14" />
+      ) : (
+        <span
+          aria-hidden
+          className="my-2 block h-9 w-full sm:h-14"
+          style={{
+            backgroundImage:
+              "radial-gradient(currentColor 1px, transparent 1px)",
+            backgroundSize: "7px 7px",
+            opacity: 0.16,
+            maskImage: "linear-gradient(to bottom, #000 5%, transparent 100%)",
+            WebkitMaskImage:
+              "linear-gradient(to bottom, #000 5%, transparent 100%)",
+          }}
+        />
+      )}
+
+      <span className="block">
+        {/* A step below the gallery's own plates, which get a column of the
+            viewport each. The longest track names ("Pre-algebra & Algebra I")
+            wrap to two lines here rather than overrunning. */}
+        <span className="block font-[family-name:var(--font-editorial)] text-[1.35rem] leading-[1.05] tracking-tight sm:text-[1.8rem] lg:text-[2.1rem]">
+          {title}
+        </span>
+        <span className="mt-2 block font-mono text-[0.68rem] leading-snug tracking-[0.1em] uppercase opacity-60 sm:text-[0.8rem]">
+          {note}
+        </span>
+      </span>
+    </button>
+  );
+}
+
 export function BookingPanel({
   subject,
   heading,
@@ -203,9 +318,13 @@ export function BookingPanel({
   trackLabel = "Choose a course",
   tracks,
   tutors,
+  bookable = [],
+  hue,
+  fontClass,
 }: Props) {
+  const plateHue = hue ? `var(--v3-hue-${hue})` : "var(--v3-accent)";
   // "Choose an exam" → "Exam". Stripping the verb leaves it lowercase, which
-  // reads as a typo beside Tutor / Time / Confirm.
+  // reads as a typo beside Tutor / Time / Checkout.
   const trackStep = trackLabel.replace(/^Choose an? /, "");
   const STEPS = [
     trackStep.charAt(0).toUpperCase() + trackStep.slice(1),
@@ -214,19 +333,139 @@ export function BookingPanel({
     "Checkout",
   ];
 
+  const bySlug = new Map(bookable.map((b) => [b.slug, b]));
+
   const [step, setStep] = useState(0);
   const [trackIndex, setTrackIndex] = useState(0);
   const [tutor, setTutor] = useState<BookingTutor | null>(tutors[0] ?? null);
-  const [day, setDay] = useState(DAYS[0]);
-  const [time, setTime] = useState<string | null>(null);
+  const [sessionCount, setSessionCount] = useState(1);
+
+  const [slots, setSlots] = useState<string[]>([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const [price, setPrice] = useState<number | null>(null);
+  const [chosen, setChosen] = useState<string | null>(null);
+
+  const [form, setForm] = useState({
+    parentName: "",
+    parentEmail: "",
+    parentPhone: "",
+    studentName: "",
+    studentGrade: "",
+    notes: "",
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const track = tracks[trackIndex];
   const last = step === STEPS.length - 1;
-  // Only the time step can be incomplete; the others start on a valid choice.
-  const canAdvance = step !== 2 || time !== null;
+  const live = tutor ? bySlug.get(tutor.slug) : undefined;
+
+  // Times are quoted in the business zone with the visitor's own alongside when
+  // they differ — a parent in California booking a Brooklyn studio should not
+  // have to do the arithmetic.
+  // Starts on the business zone so the server and the first client render
+  // agree; the browser's own zone lands a tick later, from a timer rather than
+  // straight out of the effect body.
+  const [viewerTz, setViewerTz] = useState(BUSINESS_TZ);
+  useEffect(() => {
+    const id = setTimeout(() => setViewerTz(browserTimeZone()), 0);
+    return () => clearTimeout(id);
+  }, []);
+
+  // Real availability, refetched whenever the tutor changes.
+  //
+  // Keyed on the slug rather than the tutor object: `bySlug` is rebuilt every
+  // render, and depending on a value derived from it would refetch on every
+  // keystroke in the checkout form.
+  const liveSlug = live?.slug;
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      if (!liveSlug) {
+        setSlots([]);
+        setPrice(null);
+        return;
+      }
+      setSlotsLoading(true);
+      setChosen(null);
+      try {
+        const res = await fetch(
+          `/api/booking/slots?tutor=${encodeURIComponent(liveSlug)}&duration=60`
+        );
+        const data = res.ok ? ((await res.json()) as SlotResponse) : null;
+        if (cancelled) return;
+        setSlots(data?.slots ?? []);
+        setPrice(data?.price ?? null);
+      } catch {
+        if (!cancelled) setSlots([]);
+      } finally {
+        if (!cancelled) setSlotsLoading(false);
+      }
+    };
+
+    const id = setTimeout(() => void load(), 0);
+    return () => {
+      cancelled = true;
+      clearTimeout(id);
+    };
+  }, [liveSlug]);
+
+  const canAdvance =
+    step !== 2 || (chosen !== null && live !== undefined);
+
+  const total = price != null ? price * sessionCount : null;
+
+  const submit = useCallback(async () => {
+    if (!live || !chosen || submitting) return;
+    setError(null);
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/booking/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tutorSlug: live.slug,
+          firstStartsAt: chosen,
+          sessionCount,
+          durationMinutes: 60,
+          subject,
+          track: track.name,
+          timeZone: viewerTz,
+          ...form,
+        }),
+      });
+      const data = (await res.json().catch(() => null)) as {
+        url?: string;
+        message?: string;
+      } | null;
+
+      if (!res.ok || !data?.url) {
+        setError(data?.message ?? "We couldn't start that booking.");
+        // A 409 means the grid is stale — pull it again so the parent is not
+        // staring at times that no longer exist.
+        if (res.status === 409 && live) {
+          const refreshed = await fetch(
+            `/api/booking/slots?tutor=${encodeURIComponent(live.slug)}&duration=60`
+          )
+            .then((r) => (r.ok ? r.json() : null))
+            .catch(() => null);
+          setSlots((refreshed as SlotResponse | null)?.slots ?? []);
+          setChosen(null);
+          setStep(2);
+        }
+        return;
+      }
+      window.location.href = data.url;
+    } catch {
+      setError("We couldn't reach the payment page. Check your connection.");
+    } finally {
+      setSubmitting(false);
+    }
+  }, [live, chosen, submitting, sessionCount, subject, track, viewerTz, form]);
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="mx-auto max-w-6xl">
       {/* The section keeps the page's voice; the card below it does not. */}
       <div className="flex items-baseline justify-between gap-4 border-b border-current/20 pb-2">
         <h2 className="font-[family-name:var(--font-editorial)] text-[2.3rem] tracking-tight sm:text-[2.8rem]">
@@ -236,11 +475,67 @@ export function BookingPanel({
           Four steps to checkout
         </span>
       </div>
-      <p className="v3-body mt-2 max-w-2xl opacity-75">{blurb}</p>
+      {/* max-w-3xl, not 2xl: at the site's body size the longer blurbs
+          (Mathematics', Computer Science's) wrapped to four lines and cost
+          200px of a panel that cannot grow, which is more than the plates
+          below them. One line wider is still a sane measure. */}
+      <p className="v3-body mt-2 max-w-3xl opacity-75">{blurb}</p>
 
-      {/* ── The widget ── */}
+      {/* ── Step one: the exam gallery ──
+          Deliberately not inside the widget below. This step is still browsing:
+          it is where a visitor finds out what is on offer, which is the job the
+          course gallery does one page earlier — so it borrows that page's
+          plates outright, full width and side by side. Boxed inside a bordered
+          card with a progress strip above them they read as four radio buttons
+          in a form, which is the one thing they are not. The widget takes over
+          from step two, where the decisions really are transactional. */}
+      {step === 0 ? (
+        <div className="mt-7">
+          <div
+            role="radiogroup"
+            aria-label={trackLabel}
+            // Two up on a phone: four across would put each plate under 5rem,
+            // narrower than the shortest track name.
+            className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4"
+          >
+            {tracks.map((t, i) => (
+              <TrackPlate
+                key={t.name}
+                code={String(i + 1).padStart(2, "0")}
+                selected={i === trackIndex}
+                onSelect={() => setTrackIndex(i)}
+                title={t.name}
+                note={t.note}
+                mark={t.mark}
+                hue={plateHue}
+              />
+            ))}
+          </div>
+
+          <div className="mt-7 flex flex-wrap items-center justify-between gap-4">
+            <p className="v3-micro font-mono uppercase opacity-55">
+              Step 01 / 04 &mdash; {STEPS[0]}
+            </p>
+            {/* Filled with the course's own hue, exactly as the gallery's
+                booking buttons are, rather than the widget's blue — there is no
+                widget on screen yet for it to belong to. */}
+            <button
+              type="button"
+              onClick={() => setStep(1)}
+              className="v3-label group inline-flex items-center gap-2.5 rounded-full px-7 py-4 font-mono uppercase transition-transform duration-200 hover:scale-[1.02] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--v3-accent)]"
+              style={{ backgroundColor: plateHue, color: PAPER }}
+            >
+              Continue
+              <span className="inline-block transition-transform duration-300 group-hover:translate-x-1">
+                &rarr;
+              </span>
+            </button>
+          </div>
+        </div>
+      ) : (
+      /* ── The widget, from step two on ── */
       <div
-        className="mt-4 overflow-hidden rounded-2xl border border-current/15"
+        className="mx-auto mt-3 max-w-5xl overflow-hidden rounded-2xl border border-current/15"
         style={{ backgroundColor: "var(--v3-card)" }}
       >
         {/* Progress */}
@@ -283,48 +578,38 @@ export function BookingPanel({
         </div>
 
         <div className="grid sm:grid-cols-[1fr_13rem]">
-          {/* Current step */}
+          {/* Current step. The min-height keeps the shorter ones from
+              collapsing as the reader moves between them. */}
           <div className="min-h-[13.5rem] p-4 sm:p-5">
-            {step === 0 ? (
-              <div role="radiogroup" aria-label={trackLabel} className="grid gap-2 sm:grid-cols-2">
-                {tracks.map((t, i) => (
-                  <Tile
-                    key={t.name}
-                    selected={i === trackIndex}
-                    onSelect={() => setTrackIndex(i)}
-                    title={t.name}
-                    note={t.note}
-                  />
-                ))}
-              </div>
-            ) : null}
-
             {step === 1 ? (
               <div role="radiogroup" aria-label="Tutor" className="grid gap-2 sm:grid-cols-2">
-                {tutors.map((t) => (
-                  <Tile
-                    key={t.name}
-                    selected={t.name === tutor?.name}
-                    onSelect={() => setTutor(t)}
-                    title={t.name}
-                    note={t.focus}
-                    // The rate belongs on this step because this is the step
-                    // where it is a decision — the tiers exist so a family can
-                    // choose, and they cannot choose against a number they have
-                    // to leave the panel to find.
-                    meta={
-                      rateFor(t.name) ? `$${rateFor(t.name)}/hr` : undefined
-                    }
-                    portrait={
-                      <TutorPortrait
-                        image={t.image}
-                        initials={t.initials}
-                        name={t.name}
-                        className="aspect-square w-[2.75rem] shrink-0 rounded-full"
-                      />
-                    }
-                  />
-                ))}
+                {tutors.map((t) => {
+                  const b = bySlug.get(t.slug);
+                  return (
+                    <Tile
+                      key={t.slug}
+                      selected={t.slug === tutor?.slug}
+                      onSelect={() => setTutor(t)}
+                      title={t.name}
+                      note={t.focus}
+                      // The rate belongs on this step because this is the step
+                      // where it is a decision — the tiers exist so a family can
+                      // choose, and they cannot choose against a number they
+                      // have to leave the panel to find.
+                      meta={
+                        SHOW_PRICING && b ? `$${b.hourlyRate}/hr` : undefined
+                      }
+                      portrait={
+                        <TutorPortrait
+                          image={t.image}
+                          initials={t.initials}
+                          name={t.name}
+                          className="aspect-square w-[2.75rem] shrink-0 rounded-full"
+                        />
+                      }
+                    />
+                  );
+                })}
                 <Tile
                   selected={tutor === null}
                   onSelect={() => setTutor(null)}
@@ -336,121 +621,196 @@ export function BookingPanel({
 
             {step === 2 ? (
               <>
-                <p className="text-[0.9rem] opacity-60">
-                  Indicative weekly availability — we confirm the exact date by
-                  email.
-                </p>
-                <div role="tablist" aria-label="Day" className="mt-3 flex flex-wrap gap-1.5">
-                  {DAYS.map((d) => {
-                    const selected = d === day;
-                    return (
-                      <button
-                        key={d}
-                        role="tab"
-                        aria-selected={selected}
-                        onClick={() => {
-                          setDay(d);
-                          setTime(null);
-                        }}
-                        className="rounded-lg border border-current/20 px-3 py-1.5 text-[0.9rem] font-medium transition-colors"
-                        style={
-                          selected
-                            ? { backgroundColor: FILL, borderColor: FILL, color: "#fff" }
-                            : undefined
-                        }
-                      >
-                        {d.slice(0, 3)}
-                      </button>
-                    );
-                  })}
-                </div>
-                <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
-                  {slotsFor(day).map(({ time: t, available }) => {
-                    const selected = t === time;
-                    return (
-                      <button
-                        key={t}
-                        type="button"
-                        disabled={!available}
-                        onClick={() => setTime(t)}
-                        aria-pressed={selected}
-                        className="rounded-lg border border-current/20 py-2 text-[0.9rem] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-30"
-                        style={
-                          selected
-                            ? { backgroundColor: FILL, borderColor: FILL, color: "#fff" }
-                            : available
-                              ? { borderColor: LINE, color: LINE }
-                              : undefined
-                        }
-                      >
-                        {t}
-                      </button>
-                    );
-                  })}
-                </div>
+                {!live ? (
+                  // Either "no preference", or a tutor a manager has not made
+                  // bookable. Both are honest dead ends for checkout: without a
+                  // specific tutor there is no rate card to create, so the
+                  // booking could not be provisioned. Hand off to a person.
+                  <div className="grid gap-3">
+                    <p className="text-[0.95rem] opacity-70">
+                      {tutor
+                        ? `${tutor.name} isn't taking online bookings at the moment.`
+                        : "Pick a tutor to see real times, or let us match you."}
+                    </p>
+                    <EnquiryForm
+                      fontClass={fontClass}
+                      context={{
+                        subject: `${subject} — ${track.name}`,
+                        tutorSlug: tutor?.slug,
+                        intro:
+                          "Tell us what your student needs and when suits, and we'll call you back to arrange it.",
+                      }}
+                      trigger={
+                        <button
+                          type="button"
+                          className="inline-flex w-full items-center justify-center gap-2 rounded-lg px-5 py-3 text-[1rem] font-semibold text-white sm:w-auto"
+                          style={{ backgroundColor: FILL }}
+                        >
+                          Ask us to match you
+                          <ArrowRight aria-hidden className="size-4" />
+                        </button>
+                      }
+                    />
+                  </div>
+                ) : slotsLoading ? (
+                  <p className="flex items-center gap-2 text-[0.9rem] opacity-60">
+                    <Loader2 aria-hidden className="size-4 animate-spin" />
+                    Finding {tutor?.name}&rsquo;s open times…
+                  </p>
+                ) : slots.length === 0 ? (
+                  <div className="grid gap-3">
+                    <p className="text-[0.95rem] opacity-70">
+                      {tutor?.name} has nothing free in the next few weeks.
+                    </p>
+                    <EnquiryForm
+                      fontClass={fontClass}
+                      context={{
+                        subject: `${subject} — ${track.name}`,
+                        tutorSlug: tutor?.slug,
+                      }}
+                      trigger={
+                        <button
+                          type="button"
+                          className="inline-flex w-full items-center justify-center gap-2 rounded-lg px-5 py-3 text-[1rem] font-semibold text-white sm:w-auto"
+                          style={{ backgroundColor: FILL }}
+                        >
+                          Ask about other times
+                          <ArrowRight aria-hidden className="size-4" />
+                        </button>
+                      }
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-[0.9rem] opacity-60">
+                      Real openings, at least a day ahead. Times in{" "}
+                      {BUSINESS_TZ.split("/")[1]?.replace("_", " ")}
+                      {viewerTz !== BUSINESS_TZ ? " and yours" : ""}.
+                    </p>
+
+                    <div className="mt-3 grid max-h-52 grid-cols-1 gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
+                      {slots.slice(0, 40).map((iso) => {
+                        const selected = iso === chosen;
+                        const when = new Date(iso);
+                        return (
+                          <button
+                            key={iso}
+                            type="button"
+                            onClick={() => setChosen(iso)}
+                            aria-pressed={selected}
+                            className="rounded-lg border border-current/20 px-3 py-2 text-left text-[0.9rem] transition-colors"
+                            style={
+                              selected
+                                ? { backgroundColor: FILL, borderColor: FILL, color: "#fff" }
+                                : { borderColor: LINE }
+                            }
+                          >
+                            <span className="block font-semibold">
+                              {formatInstant(when, BUSINESS_TZ)}
+                            </span>
+                            {viewerTz !== BUSINESS_TZ && (
+                              <span className="block text-[0.78rem] opacity-70">
+                                {formatInstant(when, viewerTz)} your time
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Multi-session. Buying a block is the normal case in
+                        tutoring — one lesson rarely moves anything — so the
+                        choice sits next to the time rather than behind it. */}
+                    <div className="mt-4 border-t border-current/12 pt-3">
+                      <p className="text-[0.85rem] font-medium">
+                        How many weeks? Same day and time each week.
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {SESSION_OPTIONS.map((n) => (
+                          <button
+                            key={n}
+                            type="button"
+                            onClick={() => setSessionCount(n)}
+                            aria-pressed={n === sessionCount}
+                            className="rounded-lg border border-current/20 px-3 py-1.5 text-[0.9rem] font-semibold transition-colors"
+                            style={
+                              n === sessionCount
+                                ? { backgroundColor: FILL, borderColor: FILL, color: "#fff" }
+                                : undefined
+                            }
+                          >
+                            {n === 1 ? "Just one" : `${n}×`}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
               </>
             ) : null}
 
             {step === 3 ? (
               <>
-                {/* The button says Checkout; this says what actually happens.
-                    No card is taken and no slot is held — the action still
-                    composes an enquiry — and a visitor who reads "Checkout"
-                    and expects a payment screen has to be told so here rather
-                    than discovering it when their mail client opens. Replace
-                    this line at the same time as the mailto, not before. */}
                 <p className="text-[0.9rem] opacity-60">
-                  No payment is taken here. This opens an email with your
-                  session details so we can confirm the time with you.
+                  These times are held for 35 minutes while you pay.
                 </p>
-                <div className="mt-3 rounded-xl border border-current/15 p-4">
-                  <p className="text-[1.3rem] font-semibold tracking-tight">
-                    {track.name}
-                  </p>
-                  <ul className="mt-2 space-y-1.5 text-[0.95rem] opacity-70">
-                    <li className="flex items-center gap-2.5">
-                      <Clock aria-hidden className="size-4 shrink-0" />
-                      {day}
-                      {time ? `, ${time}` : ""}
-                    </li>
-                    <li className="flex items-center gap-2.5">
-                      <Check aria-hidden className="size-4 shrink-0" />
-                      {tutor ? tutor.name : "No preference"}
-                    </li>
-                  </ul>
 
-                  {/* A step called Checkout with no number on it reads as a
-                      bait-and-switch. The rate, not a total: a total depends on
-                      whether the family is on a membership, and that is not
-                      decided in this panel. */}
-                  {rateFor(tutor?.name) ? (
-                    <p className="mt-3 border-t border-current/12 pt-3 text-[0.95rem]">
-                      <span className="font-semibold">
-                        ${rateFor(tutor?.name)}
-                      </span>
-                      <span className="opacity-60">
-                        {" "}
-                        per hour, online. Memberships are cheaper per session
-                        —{" "}
-                      </span>
-                      <Link
-                        href="/pricing"
-                        className="underline decoration-current/30 underline-offset-4 opacity-60 transition-opacity hover:opacity-100"
-                      >
-                        see pricing
-                      </Link>
-                      <span className="opacity-60">.</span>
-                    </p>
-                  ) : null}
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  <Input
+                    label="Your name"
+                    value={form.parentName}
+                    onChange={(v) => setForm({ ...form, parentName: v })}
+                    autoComplete="name"
+                  />
+                  <Input
+                    label="Email"
+                    type="email"
+                    value={form.parentEmail}
+                    onChange={(v) => setForm({ ...form, parentEmail: v })}
+                    autoComplete="email"
+                  />
+                  <Input
+                    label="Phone (optional)"
+                    type="tel"
+                    value={form.parentPhone}
+                    onChange={(v) => setForm({ ...form, parentPhone: v })}
+                    autoComplete="tel"
+                  />
+                  <Input
+                    label="Student's name"
+                    value={form.studentName}
+                    onChange={(v) => setForm({ ...form, studentName: v })}
+                  />
                 </div>
-                <a
-                  href={enquiryHref(subject, track, tutor, day, time)}
-                  className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg px-5 py-3 text-[1rem] font-semibold text-white transition-opacity hover:opacity-90 sm:w-auto"
+
+                {error && (
+                  <p className="mt-3 text-[0.85rem] text-red-500">{error}</p>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => void submit()}
+                  disabled={
+                    submitting ||
+                    !form.parentName.trim() ||
+                    !form.parentEmail.trim() ||
+                    !form.studentName.trim()
+                  }
+                  className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg px-5 py-3 text-[1rem] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 sm:w-auto"
                   style={{ backgroundColor: FILL }}
                 >
-                  Checkout
-                  <ArrowRight aria-hidden className="size-4" />
-                </a>
+                  {submitting ? (
+                    <>
+                      <Loader2 aria-hidden className="size-4 animate-spin" />
+                      Taking you to payment…
+                    </>
+                  ) : (
+                    <>
+                      {total != null ? `Pay $${total}` : "Checkout"}
+                      <ArrowRight aria-hidden className="size-4" />
+                    </>
+                  )}
+                </button>
               </>
             ) : null}
           </div>
@@ -458,23 +818,23 @@ export function BookingPanel({
           {/* Running summary */}
           <aside className="border-t border-current/12 bg-current/[0.03] p-4 sm:border-t-0 sm:border-l">
             <p className="text-[0.8rem] font-semibold tracking-wide uppercase opacity-70">
-              Your session
+              Your sessions
             </p>
             <div className="mt-2">
               <SummaryRow label="Course" value={track.name} />
               <SummaryRow label="Tutor" value={tutor ? tutor.name : "No preference"} />
-              <SummaryRow label="Time" value={time ? `${day}, ${time}` : null} />
+              <SummaryRow
+                label="Start"
+                value={chosen ? formatInstant(new Date(chosen), BUSINESS_TZ) : null}
+              />
+              <SummaryRow
+                label="Sessions"
+                value={chosen ? `${sessionCount} weekly` : null}
+              />
               {SHOW_PRICING ? (
                 <SummaryRow
-                  label="Rate"
-                  value={
-                    rateFor(tutor?.name)
-                      ? `$${rateFor(tutor?.name)}/hr`
-                      : // "No preference" is a real choice here, and the honest
-                        // answer to what it costs is that it depends who we
-                        // match — not a number.
-                        "Depends on tutor"
-                  }
+                  label="Total"
+                  value={total != null ? `$${total}` : live ? `$${price}/ea` : "Depends on tutor"}
                 />
               ) : null}
             </div>
@@ -502,7 +862,7 @@ export function BookingPanel({
           {!last ? (
             <button
               type="button"
-              onClick={() => setStep((s) => s + 1)}
+              onClick={() => setStep((s) => Math.min(STEPS.length - 1, s + 1))}
               disabled={!canAdvance}
               className="inline-flex items-center gap-2 rounded-lg px-5 py-2 text-[0.9rem] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40"
               style={{ backgroundColor: FILL }}
@@ -511,12 +871,42 @@ export function BookingPanel({
               <ArrowRight aria-hidden className="size-4" />
             </button>
           ) : (
-            <span className="text-[0.8rem] opacity-55">
-              Nothing is reserved until we reply.
+            <span className="flex items-center gap-2 text-[0.85rem] opacity-55">
+              <Clock aria-hidden className="size-4" />
+              Held 35 minutes
             </span>
           )}
         </div>
       </div>
+      )}
     </div>
+  );
+}
+
+function Input({
+  label,
+  value,
+  onChange,
+  type = "text",
+  autoComplete,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  type?: string;
+  autoComplete?: string;
+}) {
+  return (
+    <label className="block">
+      <span className="text-[0.78rem] opacity-60">{label}</span>
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        autoComplete={autoComplete}
+        maxLength={200}
+        className="mt-1 w-full rounded-lg border border-current/20 bg-transparent px-3 py-2 text-[0.95rem] outline-none focus:border-current/50"
+      />
+    </label>
   );
 }

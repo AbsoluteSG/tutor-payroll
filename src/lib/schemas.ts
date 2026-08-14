@@ -61,6 +61,24 @@ export const manualTutorPaymentSchema = z.object({
   note: z.string().trim().max(500).optional(),
 });
 
+/**
+ * A "call me back" from the public site.
+ *
+ * Only name and email are required. Every extra required field on a lead form
+ * costs leads, and the point of this one is to get a phone call started — the
+ * rest can be asked on the call.
+ */
+export const enquirySchema = z.object({
+  name: z.string().trim().min(1, "Your name is required").max(120),
+  email: z.string().trim().toLowerCase().email("Enter a valid email").max(200),
+  phone: z.string().trim().max(40).optional().or(z.literal("")),
+  message: z.string().trim().max(2000).optional().or(z.literal("")),
+  preferredTimes: z.string().trim().max(200).optional().or(z.literal("")),
+  path: z.string().trim().max(200).optional().or(z.literal("")),
+  subject: z.string().trim().max(120).optional().or(z.literal("")),
+  tutorSlug: z.string().trim().max(120).optional().or(z.literal("")),
+});
+
 export const inviteSchema = z.object({
   email: z.string().trim().toLowerCase().email("Invalid email"),
   name: z.string().trim().min(1, "Name is required").max(120),
@@ -69,6 +87,30 @@ export const inviteSchema = z.object({
 /** Manager editing a pending invite from the row menu. */
 export const inviteEditSchema = inviteSchema.extend({
   token: z.string().min(1),
+});
+
+/**
+ * What a manager sets to make a tutor bookable on the public site.
+ *
+ * Everything is optional so a half-configured tutor can be saved and finished
+ * later — the bookability gate in lib/booking/tutors.ts is what decides whether
+ * the result is complete enough to sell, not this schema.
+ */
+export const tutorBookingSettingsSchema = z.object({
+  id: z.string().min(1),
+  /** Matches the marketing roster's slug, e.g. "samantha-yershov". */
+  slug: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .regex(/^[a-z0-9][a-z0-9-]{1,60}$/, "Slug: lowercase letters, numbers and dashes")
+    .optional()
+    .or(z.literal("")),
+  tier: z.enum(["JUNIOR", "MID", "SENIOR"]).optional().or(z.literal("")),
+  defaultTutorRate: moneyString.optional().or(z.literal("")),
+  /** An IANA zone. Validated against the runtime's own list, not a regex. */
+  timeZone: z.string().trim().min(1).max(64),
+  bookable: z.coerce.boolean().optional(),
 });
 
 /** Lowercase letters, digits, dot/dash/underscore; no "@" so it can't collide with emails. */

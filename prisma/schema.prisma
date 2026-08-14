@@ -43,6 +43,51 @@ enum ScheduledClassStatus {
   CANCELED
 }
 
+/// Published price band. Sets what the CLIENT pays — see TIERS in
+/// components/marketing/pricing.ts, which holds the actual dollar figures. What
+/// the TUTOR earns is User.defaultTutorRate, a different number.
+enum TutorTier {
+  JUNIOR
+  MID
+  SENIOR
+}
+
+/// One self-serve order's progress.
+enum BookingStatus {
+  /// Slots held, Checkout session live, no money yet.
+  PENDING
+  /// Paid, and every slot became a scheduled class.
+  CONFIRMED
+  /// Paid, but some slots could not be provisioned. Needs a human.
+  PARTIAL
+  /// Paid, and nothing could be provisioned. Needs a human.
+  UNFULFILLED
+  /// The hold lapsed before payment. Slots released, nothing owed.
+  EXPIRED
+  CANCELED
+}
+
+/// One session's progress inside an order.
+enum BookingSlotStatus {
+  /// Reserved while the parent is on Stripe's page.
+  HELD
+  /// Paid and on the calendar.
+  CONFIRMED
+  /// The hold lapsed before payment.
+  EXPIRED
+  /// Killed after payment, by parent or manager.
+  CANCELED
+  /// Paid for, but the time was gone by the time the money landed.
+  CONFLICTED
+}
+
+/// Where a "call me back" lead has got to.
+enum EnquiryStatus {
+  NEW
+  CONTACTED
+  CLOSED
+}
+
 enum ChatRole {
   USER
   ASSISTANT
@@ -77,6 +122,30 @@ model User {
   active          Boolean  @default(true)
   createdAt       DateTime @default(now())
 
+  // ── Public booking ────────────────────────────────────────────────────────
+  // All nullable/defaulted: existing tutors are unaffected until a manager
+  // fills these in, and a tutor missing any of them is simply not bookable.
+
+  /// Ties this account to its entry on the marketing roster, e.g.
+  /// "samantha-yershov". The roster file carries the photograph and the copy;
+  /// this carries the identity and the money.
+  slug             String?    @unique
+  tier             TutorTier?
+  /// What this tutor EARNS per hour. Copied into RateCard.tutorRate when a
+  /// booking provisions a brand-new client — without it the parent could pay
+  /// for a class the tutor then cannot log, because submitClassAction reads
+  /// the rate from the RateCard and refuses without one.
+  ///
+  /// Never send this to a public page. It is not the tier price.
+  defaultTutorRate Decimal?   @db.Decimal(10, 2)
+  /// IANA zone this tutor's availability is expressed in. Tutors are spread
+  /// across several states, so "Tuesdays at 4pm" means nothing without it.
+  timeZone         String     @default("America/New_York")
+  /// The manager's explicit go-ahead to appear as bookable on the public site.
+  /// Off by default: appearing on the site should be a decision, not a
+  /// side effect of having an account.
+  bookable         Boolean    @default(false)
+
   rateCards       RateCard[]
   classSessions   ClassSession[]
   payments        TutorPayment[]
@@ -84,6 +153,94 @@ model User {
   chatConversations ChatConversation[]
   chatMessages      ChatMessage[]
   chatPresence      StaffPresence?
+  handledEnquiries  Enquiry[]          @relation("EnquiryHandler")
+  availabilityRules      AvailabilityRule[]
+  availabilityExceptions AvailabilityException[]
+  bookings               Booking[]
+  bookingSlots           BookingSlot[]
+}
+
+/// One weekly window a tutor is willing to teach in.
+///
+/// ─── Wall clock, not instants ───────────────────────────────────────────────
+/// Stored as a weekday plus minutes-from-local-midnight IN THE TUTOR'S OWN ZONE
+/// (User.timeZone), never as a UTC instant. "Tuesdays at 4pm" has to stay 4pm
+/// across a daylight-saving boundary; a stored instant would drift by an hour
+/// twice a year and quietly move every slot the tutor offers.
+///
+/// Conversion to an absolute instant happens at query time, in
+/// lib/time-zone.ts, and only there.
+model AvailabilityRule {
+  id          String   @id @default(cuid())
+  tutorId     String
+  /// 0 = Sunday … 6 = Saturday, as observed in the tutor's zone.
+  weekday     Int
+  /// Minutes from local midnight; 15:30 → 930. Half-open: [start, end).
+  startMinute Int
+  endMinute   Int
+  createdAt   DateTime @default(now())
+
+  tutor User @relation(fields: [tutorId], references: [id], onDelete: Cascade)
+
+  @@index([tutorId, weekday])
+}
+
+/// A one-off hole in the weekly pattern — a holiday, an exam week, a day off.
+///
+/// Only ever subtracts. Adding extra one-off hours is deliberately not
+/// supported: it doubles the cases in the slot maths, and a tutor who wants an
+/// unusual hour can have the manager schedule it directly.
+model AvailabilityException {
+  id          String   @id @default(cuid())
+  tutorId     String
+  /// A calendar date in the tutor's zone.
+  date        DateTime @db.Date
+  allDay      Boolean  @default(true)
+  /// Ignored when allDay. Same minute-of-day convention as the rules.
+  startMinute Int?
+  endMinute   Int?
+  note        String?
+  createdAt   DateTime @default(now())
+
+  tutor User @relation(fields: [tutorId], references: [id], onDelete: Cascade)
+
+  @@index([tutorId, date])
+}
+
+/// A "call me back" from the public site.
+///
+/// Deliberately not a ChatConversation. That model is a real-time queue with
+/// presence and claiming semantics, it is gated behind SHOW_CHAT, and it needs
+/// an API key and an applied migration to work at all — so a lead dropped into
+/// it would sit in a console nobody has open. This is a lead with a status a
+/// human works through, and it has no dependencies beyond the database.
+model Enquiry {
+  id      String  @id @default(cuid())
+  name    String
+  email   String
+  phone   String?
+  message String?
+  /// The page they were reading, e.g. "/courses/math".
+  path    String?
+  /// Prefilled when the enquiry came out of the booking panel.
+  subject String?
+  /// User.slug of the tutor they asked for. Deliberately not a foreign key —
+  /// a slug can be retired without orphaning the lead that named it.
+  tutorSlug      String?
+  /// Free text: "weekday evenings", "after 4pm". Not a schedule.
+  preferredTimes String?
+
+  status      EnquiryStatus @default(NEW)
+  handledById String?
+  handledAt   DateTime?
+  /// What happened on the phone.
+  staffNotes  String?
+  createdAt   DateTime      @default(now())
+
+  handledBy User? @relation("EnquiryHandler", fields: [handledById], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([createdAt])
 }
 
 model InviteToken {
@@ -101,6 +258,11 @@ model Client {
   /// Payment name is the key — e.g. the name on incoming Zelle payments.
   paymentName String   @unique
   displayName String?
+  /// The machine key for self-serve booking. `paymentName` is the BUSINESS key
+  /// and is a human name, so two families called Smith collide; an email does
+  /// not. A returning parent is matched on this rather than on their name.
+  email       String?  @unique
+  phone       String?
   notes       String?
   active      Boolean  @default(true)
   createdAt   DateTime @default(now())
@@ -110,6 +272,7 @@ model Client {
   payments         ClientPayment[]
   paymentRequests  PaymentRequest[]
   scheduledClasses ScheduledClass[]
+  bookings         Booking[]
 }
 
 /// Preset rate for a tutor↔client pair. Also controls which clients a
@@ -183,13 +346,26 @@ model ClientPayment {
   /// Checkout session that produced this payment — unique so webhook
   /// retries and manual syncs can never double-record.
   stripeSessionId String?             @unique
+  /// Set on a REFUND row, which carries a negative `amount`.
+  ///
+  /// A refund is a negative payment rather than a flag on the original,
+  /// because `balances.ts` computes `received` as a plain sum: a negative row
+  /// reduces it correctly with no change to any aggregate, and the refund
+  /// shows up in the ledger as its own line rather than silently altering
+  /// history. Unique for the same reason as the session id — so a retried
+  /// refund cannot be recorded twice.
+  stripeRefundId  String?             @unique
+  /// Set when this payment came from a self-serve booking.
+  bookingId       String?
   note            String?
   receivedAt      DateTime            @default(now())
   createdAt       DateTime            @default(now())
 
-  client Client @relation(fields: [clientId], references: [id])
+  client  Client   @relation(fields: [clientId], references: [id])
+  booking Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
 
   @@index([clientId])
+  @@index([bookingId])
 }
 
 /// A class the manager has scheduled for a tutor↔client pair. Purely a plan —
@@ -208,9 +384,130 @@ model ScheduledClass {
 
   tutor  User   @relation(fields: [tutorId], references: [id])
   client Client @relation(fields: [clientId], references: [id])
+  /// Back-relation only — no column here. A scheduled class does not need to
+  /// know it came from a booking; the booking needs to know where it landed.
+  bookingSlot BookingSlot?
 
   @@index([tutorId, scheduledAt])
   @@index([clientId, scheduledAt])
+}
+
+/// One self-serve order: one parent, ONE tutor, N sessions, one Stripe
+/// Checkout session, one payment.
+///
+/// The id doubles as the public /book/[id] slug, which makes it a bearer token
+/// exactly like ChatConversation's — anyone holding it can see the booking. So
+/// nothing may live on this model beyond what the parent typed and their own
+/// times. In particular there is deliberately NO tutor pay rate here: one
+/// `select: *` in a route handler would hand the parent the tutor's wage, and
+/// nothing on that page is computed from it. The rate stays on RateCard and is
+/// snapshotted into ClassSession at submission, exactly as before.
+model Booking {
+  id     String        @id @default(cuid())
+  status BookingStatus @default(PENDING)
+
+  tutorId String
+  /// Null until payment lands. Abandoned checkouts must not litter the client
+  /// list, and a Client cannot be created responsibly before there is money.
+  clientId String?
+
+  parentName   String
+  parentEmail  String
+  parentPhone  String?
+  studentName  String
+  studentGrade String?
+  subject      String
+  track        String
+  notes        String?
+
+  /// Client-facing snapshots, so a tier change mid-checkout cannot alter what
+  /// was quoted.
+  tier        TutorTier
+  hourlyRate  Decimal   @db.Decimal(10, 2)
+  /// Σ of the slot prices — what we asked Stripe to charge.
+  totalAmount Decimal   @db.Decimal(10, 2)
+  /// What Stripe actually took. Kept separate so a mismatch is detectable
+  /// rather than silently reconciled.
+  paidAmount  Decimal?  @db.Decimal(10, 2)
+
+  /// The zone the parent booked in. Unrecoverable afterwards, and their
+  /// confirmation times are wrong without it.
+  bookedTimeZone String
+  /// e.g. "Tuesdays 4:00 PM × 6". Display only, never parsed back.
+  patternLabel   String?
+
+  stripeSessionId String?   @unique
+  paidAt          DateTime?
+  /// After this the holds are void and the slots return to the grid. The
+  /// Checkout session's own expires_at is set to the same instant, so Stripe
+  /// and this table agree on when the hold dies.
+  holdExpiresAt   DateTime
+
+  /// True whenever money arrived and reality did not match. Drives the admin
+  /// action queue.
+  needsAttention    Boolean   @default(false)
+  /// Paid-for value with no session behind it — refund or rebook this much.
+  unfulfilledAmount Decimal   @default(0) @db.Decimal(10, 2)
+  attentionNote     String?
+  resolvedAt        DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tutor    User            @relation(fields: [tutorId], references: [id])
+  client   Client?         @relation(fields: [clientId], references: [id])
+  slots    BookingSlot[]
+  payments ClientPayment[]
+
+  @@index([status, createdAt])
+  @@index([status, holdExpiresAt])
+  @@index([tutorId, createdAt])
+  @@index([clientId, createdAt])
+}
+
+/// One session inside a Booking. This is the row the calendar is made of.
+///
+/// ⚠️ The occupancy guard is a partial EXCLUDE constraint that Prisma cannot
+/// express — it exists only in migration SQL (20260820000000_bookings). It is
+/// the single thing preventing two parents paying for overlapping time with
+/// the same tutor. **Never run `prisma db push` against this schema**: it would
+/// drop the constraint silently and nothing here would tell you.
+model BookingSlot {
+  id        String @id @default(cuid())
+  bookingId String
+  /// Denormalised from the parent, and load-bearing: a Postgres constraint
+  /// predicate can only reference its own row's columns, so occupancy has to
+  /// be decidable from this row alone.
+  tutorId   String
+
+  startsAt        DateTime
+  /// startsAt + durationMinutes, written by the app rather than computed.
+  /// `timestamptz + interval` is STABLE, not IMMUTABLE, so a computed end
+  /// cannot appear in the exclusion constraint.
+  endsAt          DateTime
+  durationMinutes Int
+
+  status BookingSlotStatus @default(HELD)
+  /// The one fact that says "this row no longer occupies the calendar", and
+  /// the constraint's whole predicate. NULL while HELD or CONFIRMED; set when
+  /// expired, cancelled or conflicted.
+  releasedAt     DateTime?
+  releasedReason String?
+
+  /// Per-session client price. Source of truth for a partial refund.
+  priceAmount Decimal @db.Decimal(10, 2)
+
+  /// Created at commit. Unique so a webhook retry cannot double-schedule.
+  scheduledClassId String? @unique
+
+  createdAt DateTime @default(now())
+
+  booking        Booking         @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  tutor          User            @relation(fields: [tutorId], references: [id])
+  scheduledClass ScheduledClass? @relation(fields: [scheduledClassId], references: [id], onDelete: SetNull)
+
+  @@index([bookingId, startsAt])
+  @@index([tutorId, startsAt])
 }
 
 /// One visitor's session with the chat box on the marketing site.

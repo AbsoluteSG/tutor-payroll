@@ -1,8 +1,9 @@
 "use client";
+import type { BookableTutor } from "@/lib/booking/tutors";
 
 import Link from "next/link";
 import { AnswerSheet } from "./v3/answer-sheet";
-import { BookingPanel } from "./v3/booking-panel";
+import { BookingPanel, type BookingTrack } from "./v3/booking-panel";
 import { SAMANTHA, JARED, ELLA, MAGGIE } from "./roster";
 import {
   SubjectPage,
@@ -34,11 +35,11 @@ import {
 const ENQUIRE =
   "mailto:hello@boroughprep.com?subject=Specialized%20Testing%20enquiry";
 
-const TRACKS = [
-  { name: "SHSAT", note: "Grades 7–8" },
-  { name: "Digital SAT", note: "Grades 10–12" },
-  { name: "PSAT / NMSQT", note: "Grades 10–11" },
-  { name: "Diagnostic only", note: "One sitting" },
+const TRACKS: BookingTrack[] = [
+  { name: "SHSAT", note: "Grades 7–8", mark: "shsat" },
+  { name: "Digital SAT", note: "Grades 10–12", mark: "digital-sat" },
+  { name: "PSAT / NMSQT", note: "Grades 10–11", mark: "psat" },
+  { name: "Diagnostic only", note: "One sitting", mark: "diagnostic" },
 ];
 
 /**
@@ -74,7 +75,12 @@ const SEQUENCE = [
   { step: "04", name: "Review", note: "The wrong answer as the lesson" },
 ];
 
-export function TestingPageV3() {
+export function TestingPageV3({
+  /** Who is actually bookable, from the database. Threaded to the panel. */
+  bookable = [],
+}: {
+  bookable?: BookableTutor[];
+} = {}) {
   return (
     <SubjectPage
       plateLabel="Plate 01 — Specialized Testing"
@@ -119,6 +125,7 @@ export function TestingPageV3() {
           key: "book",
           content: (
             <BookingPanel
+              bookable={bookable}
               subject="Specialized Testing"
               heading="Book a session"
               // The old blurb opened by telling the visitor to pick an exam and
@@ -128,6 +135,7 @@ export function TestingPageV3() {
               // sentence that says something the labels do not.
               blurb="Not sure where your student stands? Start with a diagnostic."
               trackLabel="Choose an exam"
+              hue="orange"
               tracks={TRACKS}
               tutors={TUTORS}
             />

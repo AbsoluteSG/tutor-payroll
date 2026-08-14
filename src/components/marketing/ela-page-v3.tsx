@@ -1,8 +1,9 @@
 "use client";
+import type { BookableTutor } from "@/lib/booking/tutors";
 
 import Link from "next/link";
 import { SentenceAnatomy } from "./v3/sentence-anatomy";
-import { BookingPanel } from "./v3/booking-panel";
+import { BookingPanel, type BookingTrack } from "./v3/booking-panel";
 import { SAMANTHA, LEAH } from "./roster";
 import {
   SubjectPage,
@@ -40,11 +41,11 @@ const LADDER = [
   { numeral: "VI", name: "Voice", note: "Style as precision that has been earned" },
 ];
 
-const TRACKS = [
-  { name: "Close reading", note: "Grades 6–12" },
-  { name: "Essay & argument", note: "Grades 8–12" },
-  { name: "Timed writing", note: "Exam-facing" },
-  { name: "Literature seminar", note: "Small group" },
+const TRACKS: BookingTrack[] = [
+  { name: "Close reading", note: "Grades 6–12", mark: "close-reading" },
+  { name: "Essay & argument", note: "Grades 8–12", mark: "essay" },
+  { name: "Timed writing", note: "Exam-facing", mark: "timed-writing" },
+  { name: "Literature seminar", note: "Small group", mark: "seminar" },
 ];
 
 /**
@@ -74,7 +75,12 @@ const TRIVIUM = [
   },
 ];
 
-export function ElaPageV3() {
+export function ElaPageV3({
+  /** Who is actually bookable, from the database. Threaded to the panel. */
+  bookable = [],
+}: {
+  bookable?: BookableTutor[];
+} = {}) {
   return (
     <SubjectPage
       plateLabel="Plate 02 — English Language Arts"
@@ -120,9 +126,11 @@ export function ElaPageV3() {
           key: "book",
           content: (
             <BookingPanel
+              bookable={bookable}
               subject="English Language Arts"
               heading="Book a session"
               blurb="Pick the strand your student needs and the tutor you'd like them to work with. We'll come back with times."
+              hue="purple"
               tracks={TRACKS}
               tutors={TUTORS}
             />

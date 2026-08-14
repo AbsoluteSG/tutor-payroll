@@ -39,6 +39,66 @@ export async function createCheckoutSession(request: {
   });
 }
 
+/**
+ * Stripe's minimum `expires_at` is 30 minutes, so the hold is 35 — long enough
+ * to satisfy Stripe, short enough that an abandoned checkout does not sit on
+ * somebody's Tuesday afternoon for an hour.
+ */
+export const HOLD_MINUTES = 35;
+
+/**
+ * Checkout for a self-serve booking. Sibling of `createCheckoutSession`, and
+ * deliberately different in three ways:
+ *
+ *   • **Card only.** The invoice flow accepts `us_bank_account` because a late
+ *     ACH settlement is harmless there. Here it would be actively wrong: ACH
+ *     takes days to clear, a slot cannot be held that long, and a class must
+ *     not start unpaid. ACH stays on /pay/[id].
+ *   • **`expires_at`**, set to the same instant as the booking's own hold, so
+ *     Stripe and the database agree on when the slots come free. Without it a
+ *     stale tab could pay for time that was resold half an hour ago.
+ *   • **`metadata.bookingId`**, which is how the webhook tells a booking from
+ *     an invoice.
+ */
+export async function createBookingCheckoutSession(booking: {
+  id: string;
+  tutorName: string;
+  subject: string;
+  sessionCount: number;
+  whenLabel: string;
+  amount: Prisma.Decimal;
+  parentEmail: string;
+  holdExpiresAt: Date;
+}): Promise<Stripe.Checkout.Session> {
+  const stripe = getStripe();
+  const plural = booking.sessionCount === 1 ? "session" : "sessions";
+
+  return stripe.checkout.sessions.create({
+    mode: "payment",
+    payment_method_types: ["card"],
+    // Prefill only — no Stripe Customer object is created, keeping this
+    // integration's "no Customers, no Products/Prices catalog" shape.
+    customer_email: booking.parentEmail,
+    line_items: [
+      {
+        quantity: 1,
+        price_data: {
+          currency: "usd",
+          unit_amount: booking.amount.mul(100).toNumber(),
+          product_data: {
+            name: `${booking.sessionCount} ${plural} with ${booking.tutorName}`,
+            description: `${booking.subject} — ${booking.whenLabel}`,
+          },
+        },
+      },
+    ],
+    metadata: { bookingId: booking.id },
+    expires_at: Math.floor(booking.holdExpiresAt.getTime() / 1000),
+    success_url: `${appUrl()}/book/${booking.id}?paid=1`,
+    cancel_url: `${appUrl()}/book/${booking.id}?canceled=1`,
+  });
+}
+
 /** The decision core, pure so it's unit-testable. */
 export function evaluateCheckoutSession(session: {
   payment_status: string;
@@ -57,6 +117,32 @@ export function evaluateCheckoutSession(session: {
     amount: new Prisma.Decimal(session.amount_total).div(100),
     paymentRequestId,
     clientId,
+  };
+}
+
+/**
+ * The booking equivalent, pure for the same reason.
+ *
+ * Kept separate from `evaluateCheckoutSession` rather than generalised: the two
+ * read different metadata keys, and a single function that accepted either
+ * would happily record a booking as an invoice payment if a key were ever
+ * mistyped. Two narrow functions cannot make that mistake.
+ */
+export function evaluateBookingSession(session: {
+  payment_status: string;
+  amount_total: number | null;
+  metadata: Record<string, string> | null;
+}): { record: boolean; amount?: Prisma.Decimal; bookingId?: string } {
+  const bookingId = session.metadata?.bookingId;
+  if (!bookingId) return { record: false };
+  if (session.payment_status !== "paid") return { record: false };
+  if (session.amount_total == null || session.amount_total <= 0) {
+    return { record: false };
+  }
+  return {
+    record: true,
+    amount: new Prisma.Decimal(session.amount_total).div(100),
+    bookingId,
   };
 }
 

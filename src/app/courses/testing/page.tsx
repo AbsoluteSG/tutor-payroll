@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { bookableTutors } from "@/lib/booking/tutors";
 import { TestingPageV3 } from "@/components/marketing/testing-page-v3";
 
 export const metadata: Metadata = {
@@ -7,6 +8,8 @@ export const metadata: Metadata = {
     "SHSAT and Digital SAT preparation. A standardized test is a solved problem.",
 };
 
-export default function TestingCoursePage() {
-  return <TestingPageV3 />;
+export const revalidate = 300;
+
+export default async function TestingCoursePage() {
+  return <TestingPageV3 bookable={await bookableTutors()} />;
 }

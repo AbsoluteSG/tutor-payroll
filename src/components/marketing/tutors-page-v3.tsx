@@ -3,7 +3,7 @@ import { Grain } from "./v3/grain";
 import { SiteHeader } from "./v3/site-header";
 import { TutorDirectory } from "./v3/tutor-directory";
 import { ChatWidget } from "./v3/chat-widget";
-import { tutorMatchHref } from "./v3/enquiry";
+import { EnquiryForm } from "./v3/enquiry-form";
 
 /**
  * Our Tutors — the directory, on the same scrolling chrome as /courses and
@@ -88,16 +88,29 @@ export function TutorsPageV3() {
               right tutor.
             </p>
             <div className="mt-9 flex justify-center">
-              <a
-                href={tutorMatchHref()}
-                className="group inline-flex items-center gap-2.5 rounded-full px-7 py-3.5 font-mono text-[0.68rem] tracking-[0.16em] uppercase"
-                style={{ backgroundColor: ACCENT, color: PAPER }}
-              >
-                Find my tutor
-                <span className="inline-block transition-transform duration-300 group-hover:translate-x-1">
-                  &rarr;
-                </span>
-              </a>
+              {/* Was a mailto. A lead only existed if the visitor had a mail
+                  client set up and actually pressed send in it; this one lands
+                  in /admin/enquiries either way. */}
+              <EnquiryForm
+                fontClass={editorial.variable}
+                context={{
+                  subject: "Tutor match",
+                  intro:
+                    "Tell us the subject, the grade, and what your student is finding difficult — we'll call you back with the right tutor.",
+                }}
+                trigger={
+                  <button
+                    type="button"
+                    className="group inline-flex items-center gap-2.5 rounded-full px-7 py-3.5 font-mono text-[0.68rem] tracking-[0.16em] uppercase"
+                    style={{ backgroundColor: ACCENT, color: PAPER }}
+                  >
+                    Find my tutor
+                    <span className="inline-block transition-transform duration-300 group-hover:translate-x-1">
+                      &rarr;
+                    </span>
+                  </button>
+                }
+              />
             </div>
           </section>
         </div>

@@ -3,6 +3,10 @@ import type Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
 import { getStripe } from "@/lib/stripe";
 import { recordCheckoutResult } from "@/lib/stripe-payments";
+import {
+  commitBookingCheckout,
+  expireBookingForSession,
+} from "@/lib/booking/commit";
 
 export async function POST(req: Request) {
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -31,7 +35,22 @@ export async function POST(req: Request) {
     // payment_status "unpaid", recorded on async_payment_succeeded below).
     case "checkout.session.completed":
     case "checkout.session.async_payment_succeeded": {
-      await recordCheckoutResult(event.data.object);
+      const session = event.data.object;
+      // Two kinds of Checkout session arrive here. Routing on the metadata key
+      // is explicit rather than relying on each evaluator to reject the other's
+      // shape — both do, but a mistyped key would then silently record nothing
+      // instead of failing loudly.
+      if (session.metadata?.bookingId) {
+        await commitBookingCheckout(session);
+      } else {
+        await recordCheckoutResult(session);
+      }
+      break;
+    }
+    // The parent walked away, or the 35-minute hold ran out. Release the slots
+    // now rather than waiting for someone to read that tutor's availability.
+    case "checkout.session.expired": {
+      await expireBookingForSession(event.data.object.id);
       break;
     }
     // ACH debit failed after checkout. The request is still PENDING, so the

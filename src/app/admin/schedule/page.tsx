@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { cancelScheduledClassAction } from "@/lib/actions/schedule-actions";
 import { formatDuration } from "@/lib/money";
+import { BUSINESS_TZ, formatInstant } from "@/lib/time-zone";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -97,11 +98,8 @@ export default async function SchedulePage() {
                 {scheduled.map((s) => (
                   <TableRow key={s.id} data-reveal>
                     <TableCell className="whitespace-nowrap">
-                      {s.scheduledAt.toLocaleString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        hour: "numeric",
-                        minute: "2-digit",
+                      {formatInstant(s.scheduledAt, BUSINESS_TZ, {
+                        weekday: undefined,
                       })}
                     </TableCell>
                     <TableCell>

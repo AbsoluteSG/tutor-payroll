@@ -22,7 +22,7 @@ export default async function TutorDashboard({
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
 
-  const [balance, recent, upcoming] = await Promise.all([
+  const [balance, recent, upcoming, me] = await Promise.all([
     getTutorBalance(user.id),
     prisma.classSession.findMany({
       where: { tutorId: user.id },
@@ -35,6 +35,10 @@ export default async function TutorDashboard({
       orderBy: { scheduledAt: "asc" },
       take: 5,
       include: { client: { select: { paymentName: true, displayName: true } } },
+    }),
+    prisma.user.findUnique({
+      where: { id: user.id },
+      select: { timeZone: true },
     }),
   ]);
 
@@ -55,6 +59,10 @@ export default async function TutorDashboard({
       id: "upcoming",
       node: (
         <UpcomingClasses
+          timeZone={me?.timeZone}
+          // The widget deliberately keeps its cap of five; /schedule is where
+          // everything lives, so this links there rather than growing.
+          viewAllHref="/schedule"
           rows={upcoming.map((u) => ({
             id: u.id,
             scheduledAt: u.scheduledAt,

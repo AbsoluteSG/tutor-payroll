@@ -47,7 +47,21 @@ export default async function ClientProfilePage({ params }: { params: Promise<{ 
         stats={[
           { label: "All-time billed", value: formatUSD(balance.billed) },
           { label: "Received", value: formatUSD(balance.received) },
-          { label: "Owes", value: formatUSD(balance.owed), accent: balance.owed.gt(0) ? "green" : "neutral" },
+          // A client who booked online has paid before any class is logged, so
+          // `owed` is legitimately negative until the tutor works through the
+          // sessions. Rendering that as "Owes −$900" reads like a bug; it is a
+          // credit, and saying so is the whole fix.
+          balance.owed.lt(0)
+            ? {
+                label: "In credit",
+                value: formatUSD(balance.owed.negated()),
+                accent: "neutral" as const,
+              }
+            : {
+                label: "Owes",
+                value: formatUSD(balance.owed),
+                accent: balance.owed.gt(0) ? ("green" as const) : ("neutral" as const),
+              },
           { label: "Your cut", value: formatUSD(balance.margin), accent: "green" },
         ]}
       />

@@ -15,13 +15,25 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { PaymentSection } from "./payment-section";
+import { TutorBookingSettings } from "./booking-settings";
 import { RateCardEditor } from "./rate-card-editor";
 
 export default async function TutorProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const tutor = await prisma.user.findUnique({
     where: { id, role: "TUTOR" },
-    select: { id: true, name: true, email: true, active: true, stripeOnboarded: true },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      active: true,
+      stripeOnboarded: true,
+      slug: true,
+      tier: true,
+      defaultTutorRate: true,
+      timeZone: true,
+      bookable: true,
+    },
   });
   if (!tutor) notFound();
 
@@ -74,6 +86,18 @@ export default async function TutorProfilePage({ params }: { params: Promise<{ i
         tutorId={tutor.id}
         owed={balance.owed.toFixed(2)}
         stripeReady={tutor.stripeOnboarded}
+      />
+
+      {/* Decimal is not serializable across the RSC boundary, hence toFixed. */}
+      <TutorBookingSettings
+        settings={{
+          id: tutor.id,
+          slug: tutor.slug ?? "",
+          tier: tutor.tier ?? "",
+          defaultTutorRate: tutor.defaultTutorRate?.toFixed(2) ?? "",
+          timeZone: tutor.timeZone,
+          bookable: tutor.bookable,
+        }}
       />
 
       <Card>

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Grain } from "./v3/grain";
 import { SiteHeader } from "./v3/site-header";
 import { ChatWidget } from "./v3/chat-widget";
-import { tutorMatchHref } from "./v3/enquiry";
+import { EnquiryForm } from "./v3/enquiry-form";
 import {
   GUARANTEE,
   MEMBERSHIPS,
@@ -186,6 +186,33 @@ export function PricingPageV3() {
                 </div>
               ))}
             </div>
+
+            {/* Memberships cannot be bought on the site yet — they need
+                recurring billing, which does not exist in this codebase. Rather
+                than leave a price on the page with no way to act on it, this
+                routes to a phone call. Replace with a real CTA when Stripe
+                Billing lands. */}
+            <p className="mt-6 text-[0.88rem] leading-relaxed opacity-70">
+              Memberships are arranged over the phone —{" "}
+              <EnquiryForm
+                fontClass={editorial.variable}
+                context={{
+                  subject: "Membership enquiry",
+                  intro:
+                    "Tell us how often your student needs sessions and which subject, and we'll call you to set a membership up.",
+                }}
+                trigger={
+                  <button
+                    type="button"
+                    className="underline decoration-current/40 underline-offset-4 transition-colors hover:decoration-current"
+                    style={{ color: ACCENT }}
+                  >
+                    ask us to call you
+                  </button>
+                }
+              />
+              .
+            </p>
           </section>
 
           {/* ── Guarantee ── */}
@@ -227,16 +254,29 @@ export function PricingPageV3() {
               the work actually is.
             </p>
             <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
-              <a
-                href={tutorMatchHref()}
-                className="group inline-flex items-center gap-2.5 rounded-full px-7 py-3.5 font-mono text-[0.68rem] tracking-[0.16em] uppercase"
-                style={{ backgroundColor: ACCENT, color: PAPER }}
-              >
-                Book a diagnostic
-                <span className="inline-block transition-transform duration-300 group-hover:translate-x-1">
-                  &rarr;
-                </span>
-              </a>
+              {/* The diagnostic is not self-serve bookable — it is free, and
+                  Stripe cannot take a $0 checkout — so it goes through the
+                  enquiry form and someone arranges it on the phone. */}
+              <EnquiryForm
+                fontClass={editorial.variable}
+                context={{
+                  subject: "Free diagnostic",
+                  intro:
+                    "The diagnostic is free and there's no obligation. Tell us the exam or subject and we'll call you to arrange a time.",
+                }}
+                trigger={
+                  <button
+                    type="button"
+                    className="group inline-flex items-center gap-2.5 rounded-full px-7 py-3.5 font-mono text-[0.68rem] tracking-[0.16em] uppercase"
+                    style={{ backgroundColor: ACCENT, color: PAPER }}
+                  >
+                    Book a diagnostic
+                    <span className="inline-block transition-transform duration-300 group-hover:translate-x-1">
+                      &rarr;
+                    </span>
+                  </button>
+                }
+              />
               <Link
                 href="/tutors"
                 className="inline-flex items-center rounded-full border border-current/25 px-7 py-3.5 font-mono text-[0.68rem] tracking-[0.16em] uppercase transition-colors hover:border-current/60"

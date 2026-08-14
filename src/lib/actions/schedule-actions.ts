@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireManager } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { scheduleClassSchema } from "@/lib/schemas";
+import { BUSINESS_TZ, parseDateTimeLocalInZone } from "@/lib/time-zone";
 import type { ActionResult } from "@/lib/actions/auth-actions";
 
 /** Manager schedules a class for a tutor↔client pair (must have a rate card). */
@@ -29,12 +30,20 @@ export async function createScheduledClassAction(_prev: ActionResult, formData: 
     return { error: "That tutor isn't assigned to that client. Set up a rate first." };
   }
 
+  // A `datetime-local` value is a wall clock with no zone attached, so
+  // `new Date(...)` read it in whatever zone the server happened to run in —
+  // meaning the same form produced a different instant in development and in
+  // production. It is now always read as Brooklyn time, which is what the
+  // manager filling the form means, and stored as UTC like every other instant.
+  const startsAt = parseDateTimeLocalInZone(scheduledAt, BUSINESS_TZ);
+  if (!startsAt) return { error: "That date and time isn't valid." };
+
   await prisma.scheduledClass.create({
     data: {
       tutorId,
       clientId,
       studentName,
-      scheduledAt: new Date(scheduledAt),
+      scheduledAt: startsAt,
       durationMinutes,
       notes,
     },
