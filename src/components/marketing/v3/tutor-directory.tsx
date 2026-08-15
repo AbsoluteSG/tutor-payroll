@@ -593,7 +593,57 @@ function TutorProfile({
   );
 }
 
-export function TutorDirectory({ fontClass }: { fontClass: string }) {
+/**
+ * A tutor's own words, from their onboarding form, keyed by roster slug.
+ *
+ * Supplied by the page rather than read here, because this is a client
+ * component and the query belongs on the server.
+ */
+export type TutorProfileOverride = {
+  slug: string;
+  headline?: string | null;
+  bio?: string | null;
+  subjects?: string[];
+};
+
+/**
+ * Merge what a tutor wrote about themselves over their roster entry.
+ *
+ * Field by field rather than wholesale: a tutor filling in a headline should
+ * not blank the education and photograph the studio holds for them. Everything
+ * they did not write falls through to the entry above, and a tutor with no
+ * profile of their own renders exactly as before.
+ *
+ * `bio` arrives as one block of text and is split on blank lines, because the
+ * card renders a paragraph per entry.
+ */
+function withProfile(tutor: Tutor, override?: TutorProfileOverride): Tutor {
+  if (!override) return tutor;
+  const bio = override.bio?.trim()
+    ? override.bio.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean)
+    : null;
+  return {
+    ...tutor,
+    role: override.headline?.trim() || tutor.role,
+    summary: override.headline?.trim() || tutor.summary,
+    bio: bio && bio.length > 0 ? bio : tutor.bio,
+    subjects:
+      override.subjects && override.subjects.length > 0
+        ? override.subjects
+        : tutor.subjects,
+  };
+}
+
+export function TutorDirectory({
+  fontClass,
+  profiles = [],
+}: {
+  fontClass: string;
+  /** Tutor-written copy for anyone the studio has published. */
+  profiles?: TutorProfileOverride[];
+}) {
+  const bySlug = new Map(profiles.map((p) => [p.slug, p]));
+
   return (
     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {TUTORS.map((tutor, i) => (
@@ -601,7 +651,7 @@ export function TutorDirectory({ fontClass }: { fontClass: string }) {
         // are not lazy-loaded.
         <TutorCard
           key={tutor.slug}
-          tutor={tutor}
+          tutor={withProfile(tutor, bySlug.get(tutor.slug))}
           priority={i < 3}
           fontClass={fontClass}
         />

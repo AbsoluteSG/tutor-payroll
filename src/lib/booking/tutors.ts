@@ -140,3 +140,39 @@ export async function tutorPayRate(userId: string) {
   });
   return row?.defaultTutorRate ?? null;
 }
+
+/**
+ * Tutor-written profile copy for the public directory.
+ *
+ * Gated on `bookable` — the same switch that gates everything else public. A
+ * tutor who has finished onboarding but has not been published has written
+ * their profile into a draft, and it stays in the admin until a manager decides
+ * otherwise. Without that gate, filling in the welcome form would publish
+ * yourself, which is exactly what the manager approval step exists to prevent.
+ *
+ * Returns an empty list on a database failure, like `bookableTutors` above and
+ * for the same reason: the directory is mostly static copy and must not 500
+ * because Postgres hiccuped. The visible cost is that the roster's own words
+ * are shown instead.
+ */
+export async function publishedTutorProfiles(): Promise<
+  { slug: string; headline: string | null; bio: string | null; subjects: string[] }[]
+> {
+  try {
+    const rows = await prisma.user.findMany({
+      where: { ...BOOKABLE },
+      select: { slug: true, headline: true, bio: true, subjects: true },
+    });
+    return rows
+      .filter((r): r is typeof r & { slug: string } => Boolean(r.slug))
+      .map((r) => ({
+        slug: r.slug,
+        headline: r.headline,
+        bio: r.bio,
+        subjects: r.subjects,
+      }));
+  } catch (error) {
+    console.error("[tutors] could not load published profiles", error);
+    return [];
+  }
+}

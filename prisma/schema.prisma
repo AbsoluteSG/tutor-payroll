@@ -146,6 +146,27 @@ model User {
   /// side effect of having an account.
   bookable         Boolean    @default(false)
 
+  // ── Onboarding ────────────────────────────────────────────────────────────
+  // What a tutor tells us about themselves when they accept an invite. None of
+  // it publishes anything on its own: `bookable` above is still the manager's
+  // decision, and these fields only reach the public site once it is set.
+  //
+  // Deliberately absent from this block: tier and defaultTutorRate. Those are
+  // what the client pays and what the tutor earns, and a form where somebody
+  // sets their own wage is not a form worth building.
+
+  /// When the tutor finished the welcome form. Null means they have not, and
+  /// the tutor layout sends them there instead of the dashboard.
+  onboardedAt DateTime?
+  /// Contact number, for the studio rather than the public site.
+  phone       String?
+  /// One line: what they are the one to ask for, in their own words.
+  headline    String?
+  /// A short paragraph for their public profile.
+  bio         String?
+  /// What they teach. Free text, one per entry.
+  subjects    String[]  @default([])
+
   rateCards       RateCard[]
   classSessions   ClassSession[]
   payments        TutorPayment[]

@@ -68,5 +68,8 @@ export async function acceptInviteAction(_prev: ActionResult, formData: FormData
     password,
     redirect: false,
   });
-  redirect("/");
+  // Straight into the welcome form for tutors. Sending them to "/" first would
+  // bounce them here anyway via the tutor layout, but through the marketing
+  // site, which is a confusing first thing to see after accepting an invite.
+  redirect(invite.role === "TUTOR" ? "/welcome" : "/");
 }

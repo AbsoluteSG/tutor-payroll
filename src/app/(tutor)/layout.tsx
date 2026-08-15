@@ -5,7 +5,18 @@ import { AppHeader } from "@/components/app-header";
 export default async function TutorLayout({ children }: { children: React.ReactNode }) {
   const user = await requireUser();
   // Read the name fresh so profile edits reflect immediately (the session JWT caches it).
-  const dbUser = await prisma.user.findUnique({ where: { id: user.id }, select: { name: true } });
+  const dbUser = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { name: true, onboardedAt: true, role: true },
+  });
+
+  // A tutor who has not filled in the welcome form is sent there instead of the
+  // dashboard. /welcome deliberately sits outside this layout — inside it, this
+  // redirect would fire on the welcome page too and loop forever.
+  if (dbUser && dbUser.role === "TUTOR" && !dbUser.onboardedAt) {
+    const { redirect } = await import("next/navigation");
+    redirect("/welcome");
+  }
 
   return (
     <>
