@@ -26,8 +26,10 @@ const NAV = [
   // Testimonials is unlinked until there are real accounts on it — an empty
   // page in the nav advertises that nobody has said anything. Restore this
   // line when v3/testimonial-wall.tsx has content.
-  { label: "Method", href: "/" },
-  { label: "About", href: "/" },
+  // "Method" was here pointing at "/", so it silently reloaded the home page.
+  // Removed rather than pointed somewhere: there is no method page, and a nav
+  // item that goes nowhere is worse than one that is absent.
+  { label: "About", href: "/about" },
   { label: "Contact", href: "mailto:hello@boroughprep.com" },
 ];
 
