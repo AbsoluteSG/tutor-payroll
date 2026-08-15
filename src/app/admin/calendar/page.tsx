@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { formatUSD } from "@/lib/money";
 import {
   BUSINESS_TZ,
   formatMinuteOfDay,
@@ -46,11 +47,25 @@ export default async function AdminCalendarPage() {
       studentName: true,
       status: true,
       notes: true,
-      tutor: { select: { name: true } },
-      client: { select: { paymentName: true, displayName: true } },
+      tutor: { select: { id: true, name: true } },
+      client: { select: { id: true, paymentName: true, displayName: true } },
       // Present only when this class came out of a public booking — the
-      // relation is what distinguishes the two on the grid.
-      bookingSlot: { select: { id: true } },
+      // relation is what distinguishes the two on the grid, and carries what
+      // the family actually bought for the detail panel.
+      bookingSlot: {
+        select: {
+          booking: {
+            select: {
+              id: true,
+              subject: true,
+              track: true,
+              paidAmount: true,
+              parentName: true,
+              parentEmail: true,
+            },
+          },
+        },
+      },
     },
   });
 
@@ -58,16 +73,31 @@ export default async function AdminCalendarPage() {
     // `minutes` is minutes from local midnight in the business zone, which is
     // exactly what formatMinuteOfDay takes — no clock arithmetic here.
     const { minutes } = utcToZonedParts(c.scheduledAt, BUSINESS_TZ);
+    const booking = c.bookingSlot?.booking ?? null;
     return {
       id: c.id,
       day: toISODateInZone(c.scheduledAt, BUSINESS_TZ),
+      /** Sorts correctly and is the y-position in the day view. */
+      startMinutes: minutes,
       time: formatMinuteOfDay(minutes),
+      endTime: formatMinuteOfDay(minutes + c.durationMinutes),
       tutorName: c.tutor.name,
+      clientId: c.client.id,
       clientLabel: c.client.displayName ?? c.client.paymentName,
       studentName: c.studentName,
       durationMinutes: c.durationMinutes,
       status: c.status,
-      fromBooking: Boolean(c.bookingSlot),
+      notes: c.notes,
+      booking: booking
+        ? {
+            id: booking.id,
+            subject: booking.subject,
+            track: booking.track,
+            paid: booking.paidAmount ? formatUSD(booking.paidAmount) : null,
+            parentName: booking.parentName,
+            parentEmail: booking.parentEmail,
+          }
+        : null,
     };
   });
 
