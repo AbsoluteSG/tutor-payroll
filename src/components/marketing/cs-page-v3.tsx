@@ -4,8 +4,11 @@ import type { BookableTutor } from "@/lib/booking/tutors";
 import Link from "next/link";
 import { CrtScreen } from "./v3/crt-screen";
 import { CircuitField } from "./v3/circuit-field";
-import { BookingPanel, type BookingTrack } from "./v3/booking-panel";
-import { JARED } from "./roster";
+import {
+  BookingPanel,
+  type BookingTrack,
+  type BookingTutor,
+} from "./v3/booking-panel";
 import {
   SubjectPage,
   SectionHead,
@@ -65,12 +68,6 @@ const TRACKS: BookingTrack[] = [
 ];
 
 /**
- * The tutors offering this subject, from the shared roster. Real people only —
- * see roster.ts. This page previously listed three invented ones.
- */
-const TUTORS = [{ ...JARED, focus: "Introductory computer science" }];
-
-/**
  * The lineage, as a descent rather than an inheritance: four levels between a
  * written instruction and a switch changing state.
  */
@@ -81,11 +78,15 @@ const DESCENT = [
   { level: "04", name: "Circuit", note: "What moves" },
 ];
 
+
 export function CsPageV3({
   /** Who is actually bookable, from the database. Threaded to the panel. */
   bookable = [],
+  /** Published tutors for this subject, from the database. */
+  roster = [],
 }: {
   bookable?: BookableTutor[];
+  roster?: BookingTutor[];
 } = {}) {
   return (
     <SubjectPage
@@ -138,7 +139,7 @@ export function CsPageV3({
               blurb="Pick the course your student is taking, or the one they're aiming at. Intro assumes no prior programming."
               hue="green"
               tracks={TRACKS}
-              tutors={TUTORS}
+              tutors={roster}
             />
           ),
         },

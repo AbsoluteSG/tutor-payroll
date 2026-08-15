@@ -167,6 +167,32 @@ model User {
   /// What they teach. Free text, one per entry.
   subjects    String[]  @default([])
 
+  // ── Public profile ────────────────────────────────────────────────────────
+  // Everything the directory and the subject pages render. This used to live in
+  // a hand-written TypeScript file, which meant an empty database still showed
+  // six tutors and a real tutor could not appear without a code change. All of
+  // it is now a record, and `bookable` decides whether it is seen.
+
+  /// Which subject pages this tutor appears on: "testing", "ela", "math", "cs".
+  /// A structured key rather than matching free-text subjects, so a page can ask
+  /// for its own tutors without guessing at spelling.
+  courses     String[]  @default([])
+  /// Degrees and institutions, one per entry.
+  education   String[]  @default([])
+  /// The few chips on their card. Deliberately short — `subjects` is the list.
+  specialties String[]  @default([])
+  /// Exams they prepare students for.
+  testPrep    String[]  @default([])
+  /// Grade range, where the practice states one, e.g. "Grades 6–12".
+  levels      String?
+  /// Path under /public, e.g. "/tutors/jared.webp". Set by a manager rather
+  /// than the tutor: there is no upload in this stack, and a photograph is the
+  /// one part of a profile the studio wants to have seen before it is on the
+  /// site. Without one the monogram plate stands in — see tutor-portrait.tsx.
+  photoUrl    String?
+  /// Alt text for the photograph. Never just the name repeated.
+  photoAlt    String?
+
   rateCards       RateCard[]
   classSessions   ClassSession[]
   payments        TutorPayment[]

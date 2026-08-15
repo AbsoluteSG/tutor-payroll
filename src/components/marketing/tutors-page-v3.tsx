@@ -3,7 +3,7 @@ import { Grain } from "./v3/grain";
 import { SiteHeader } from "./v3/site-header";
 import {
   TutorDirectory,
-  type TutorProfileOverride,
+  type DirectoryTutor,
 } from "./v3/tutor-directory";
 import { ChatWidget } from "./v3/chat-widget";
 import { EnquiryForm } from "./v3/enquiry-form";
@@ -40,11 +40,11 @@ const INK = "var(--v3-ink)";
 const ACCENT = "var(--v3-accent)";
 
 export function TutorsPageV3({
-  /** Tutor-written copy, merged over the roster entries. See tutor-directory. */
-  profiles = [],
+  /** Published tutors, from the database. See tutor-directory. */
+  tutors,
 }: {
-  profiles?: TutorProfileOverride[];
-} = {}) {
+  tutors: DirectoryTutor[];
+}) {
   return (
     <div
       className={`${editorial.variable} relative flex min-h-[100svh] flex-col overflow-x-hidden selection:bg-[var(--v3-accent)] selection:text-[var(--v3-paper)]`}
@@ -85,7 +85,7 @@ export function TutorsPageV3({
           <div className="mt-14 sm:mt-20">
             <TutorDirectory
               fontClass={editorial.variable}
-              profiles={profiles}
+              tutors={tutors}
             />
           </div>
 

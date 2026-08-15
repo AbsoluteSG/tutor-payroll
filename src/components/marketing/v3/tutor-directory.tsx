@@ -74,192 +74,6 @@ type Tutor = {
   levels?: string;
 };
 
-const TUTORS: Tutor[] = [
-  {
-    slug: "samantha-yershov",
-    name: "Samantha Yershov",
-    role: "Writing & essay editing",
-    initials: "SY",
-    photo: "/tutors/samantha-yershov.webp",
-    photoAlt: "Samantha Yershov, photographed in a graduation stole.",
-    education: [
-      "Georgetown University — cum laude",
-      "Incoming student, Columbia Law School",
-    ],
-    specialties: ["Writing & essay editing", "Personal statements", "SHSAT"],
-    summary:
-      "Writing support and essay editing at every level, from middle school academic writing to college application personal statements.",
-    bio: [
-      "Samantha recently graduated cum laude from Georgetown University and is an incoming student at Columbia Law School. She has extensive experience in tutoring and essay editing.",
-      "She specializes in writing support and essay editing for all ages and grade levels, including college application personal statements and academic writing for middle school, high school, and college students.",
-      "She also tutors all core subjects — Math, English, Science, and History — for grades K–8, and provides state test and SHSAT preparation.",
-    ],
-    subjects: [
-      "Writing support",
-      "Essay editing",
-      "College personal statements",
-      "Academic writing",
-      "Math (K–8)",
-      "English (K–8)",
-      "Science (K–8)",
-      "History (K–8)",
-    ],
-    testPrep: ["SHSAT", "State tests"],
-    levels: "Writing at all levels · Core subjects K–8",
-  },
-  {
-    slug: "jared",
-    name: "Jared",
-    role: "Mathematics, economics & computer science",
-    initials: "J",
-    photo: "/tutors/jared.webp",
-    photoAlt: "Jared, photographed in a navy suit against a grey background.",
-    education: [
-      "University of Maryland — Finance and Computer Science double major",
-    ],
-    specialties: ["Mathematics", "Economics & finance", "SAT / ACT"],
-    summary:
-      "Mathematics through calculus, economics, and introductory computer science, with SHSAT, SAT, and ACT preparation.",
-    bio: [
-      "Jared is a Finance and Computer Science double major at the University of Maryland.",
-      "He has experience tutoring students from middle school through college, and preparing students for the SHSAT, SAT, and ACT.",
-    ],
-    subjects: [
-      "Algebra",
-      "Algebra 2 / Trigonometry",
-      "Pre-Calculus",
-      "Calculus I (AB)",
-      "Calculus II (BC)",
-      "Statistics",
-      "Biology",
-      "Environmental Science",
-      "Macroeconomics",
-      "Microeconomics",
-      "Accounting",
-      "Finance",
-      "Introductory Computer Science",
-    ],
-    testPrep: ["SHSAT", "SAT", "ACT"],
-    levels: "Middle school through college",
-  },
-  {
-    slug: "ella",
-    name: "Ella",
-    role: "Math & science",
-    initials: "E",
-    photo: "/tutors/ella.webp",
-    photoAlt:
-      "Ella, photographed in a University of Miami Miller School of Medicine white coat.",
-    // A full-length photograph at 3:4 — cover-cropping to 4:5 trims only the
-    // bottom 125px, so without this she stays a small figure under a palm tree
-    // while the other two are head-and-shoulders.
-    framing: { focus: "50% 35%", zoom: 1.8 },
-    education: [
-      "University of Miami Miller School of Medicine",
-      "Cornell University — Biology, 2020",
-    ],
-    specialties: ["Math & science", "9+ years tutoring", "SHSAT & SAT"],
-    summary:
-      "A medical student with more than nine years of tutoring experience, specializing in math and science.",
-    bio: [
-      "Ella is a medical student at the University of Miami Miller School of Medicine. She graduated from Cornell University in 2020 with a degree in Biology and has more than 9 years of tutoring experience.",
-      "She specializes in math and science, and also has experience preparing students for the SHSAT and SAT.",
-    ],
-    subjects: [
-      "Chemistry",
-      "Biology",
-      "Anatomy",
-      "Geometry",
-      "Trigonometry",
-      "General Math",
-    ],
-    testPrep: ["SHSAT", "SAT"],
-  },
-  {
-    slug: "maggie",
-    name: "Maggie",
-    role: "High school mathematics",
-    initials: "M",
-    // No photograph supplied. The monogram plate stands in until there is one.
-    education: [
-      "Certified, Mathematics grades 7–12",
-      "Eight years teaching high school mathematics",
-    ],
-    specialties: ["Algebra & geometry", "College prep math", "SAT / ACT"],
-    summary:
-      "A certified high school mathematics teacher of eight years, tutoring elementary through high school with a focus on building confidence in maths.",
-    bio: [
-      "Maggie has been a high school math teacher for eight years, with her certification in Mathematics for grades 7–12.",
-      "She has experience tutoring elementary school, middle school, and high school students in math, and aims to help all students feel more confident in the subject.",
-      "For the last eight years she has taught Algebra 1, Geometry, Algebra 2, and college preparatory math courses. She also has experience tutoring for both the SAT and the ACT.",
-    ],
-    subjects: [
-      "Algebra 1",
-      "Geometry",
-      "Algebra 2",
-      "College preparatory math",
-    ],
-    testPrep: ["SAT", "ACT"],
-    levels: "Elementary through high school",
-  },
-  {
-    slug: "leah-livin",
-    name: "Leah Livin",
-    role: "Biology, chemistry & K–12 support",
-    initials: "LL",
-    photo: "/tutors/leah-livin.webp",
-    photoAlt: "Leah Livin, photographed indoors.",
-    education: [
-      "Florida State University — Biology and Education",
-      "Pre-veterinary track",
-    ],
-    specialties: ["Biology", "Chemistry", "K–12 all subjects"],
-    summary:
-      "Biology and Education major on the pre-veterinary track, tutoring K–12 across all subjects with a particular focus on the sciences.",
-    bio: [
-      "Leah is a Biology and Education major on the pre-veterinary track at Florida State University. She believes every student has the potential to succeed in any subject, and that there is no such thing as a “bad” student — only untapped potential.",
-      "She has several experiences teaching both middle school and college students, and specialises in creating tailored lessons and offering personalised guidance to meet each student’s needs.",
-      "She offers tutoring for K–12 students in all subjects, with a special focus on Biology, from molecular to evolutionary. She is also fluent in Russian and has a basic understanding of Italian.",
-    ],
-    subjects: [
-      "Biology (molecular to evolutionary)",
-      "Chemistry",
-      "Research topics",
-      "English",
-      "Algebra",
-      "All subjects, K–12",
-    ],
-    // She did not mention test preparation, so none is claimed.
-    testPrep: [],
-    levels: "K–12 · Russian (fluent) · Italian (basic)",
-  },
-  {
-    slug: "alina-dydyk",
-    name: "Alina Dydyk",
-    role: "Elementary & middle school",
-    initials: "AD",
-    photo: "/tutors/alina-dydyk.webp",
-    photoAlt: "Alina Dydyk, photographed in a white jacket.",
-    education: [
-      "Pennsylvania State University — Biomedical Engineering",
-      "Four years tutoring",
-    ],
-    specialties: ["Elementary school", "Middle school", "Confidence building"],
-    summary:
-      "Four years tutoring elementary and middle school students, with a personalised approach built around a supportive and motivating environment.",
-    bio: [
-      "Alina is a student at Pennsylvania State University studying Biomedical Engineering. She has been tutoring for four years, specialising in elementary and middle school students.",
-      "She loves helping students build confidence in their work by creating a supportive and motivating environment. Her teaching approach is personalised to each student, and she will be there to guide every step a student takes.",
-    ],
-    // Her note specifies the ages she works with rather than named subjects, so
-    // none are listed. Ask her before filling this in.
-    subjects: [],
-    testPrep: [],
-    levels: "Elementary and middle school",
-  },
-];
-
-/** A label/value block, shared by the profile's four columns. */
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
@@ -594,64 +408,78 @@ function TutorProfile({
 }
 
 /**
- * A tutor's own words, from their onboarding form, keyed by roster slug.
+ * What the page hands this component — one published tutor, from the database.
  *
- * Supplied by the page rather than read here, because this is a client
- * component and the query belongs on the server.
+ * Shaped by `publicTutors()` in lib/booking/tutors.ts. Kept structurally
+ * identical to what the card renders so there is no second definition of a
+ * tutor drifting from the first.
  */
-export type TutorProfileOverride = {
+export type DirectoryTutor = {
   slug: string;
-  headline?: string | null;
-  bio?: string | null;
-  subjects?: string[];
+  name: string;
+  initials: string;
+  headline: string;
+  bio: string[];
+  subjects: string[];
+  education: string[];
+  specialties: string[];
+  testPrep: string[];
+  levels: string | null;
+  photo: string | null;
+  photoAlt: string | null;
 };
 
-/**
- * Merge what a tutor wrote about themselves over their roster entry.
- *
- * Field by field rather than wholesale: a tutor filling in a headline should
- * not blank the education and photograph the studio holds for them. Everything
- * they did not write falls through to the entry above, and a tutor with no
- * profile of their own renders exactly as before.
- *
- * `bio` arrives as one block of text and is split on blank lines, because the
- * card renders a paragraph per entry.
- */
-function withProfile(tutor: Tutor, override?: TutorProfileOverride): Tutor {
-  if (!override) return tutor;
-  const bio = override.bio?.trim()
-    ? override.bio.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean)
-    : null;
+/** Database row to the shape the card was already written against. */
+function toCard(t: DirectoryTutor): Tutor {
   return {
-    ...tutor,
-    role: override.headline?.trim() || tutor.role,
-    summary: override.headline?.trim() || tutor.summary,
-    bio: bio && bio.length > 0 ? bio : tutor.bio,
-    subjects:
-      override.subjects && override.subjects.length > 0
-        ? override.subjects
-        : tutor.subjects,
+    slug: t.slug,
+    name: t.name,
+    initials: t.initials,
+    role: t.headline,
+    // The card wants a sentence or two; the profile wants the whole thing. The
+    // opening paragraph is the tutor's own summary of themselves, which beats
+    // repeating the headline underneath itself.
+    summary: t.bio[0] ?? t.headline,
+    bio: t.bio,
+    subjects: t.subjects,
+    education: t.education,
+    specialties: t.specialties,
+    testPrep: t.testPrep,
+    ...(t.levels ? { levels: t.levels } : {}),
+    ...(t.photo ? { photo: t.photo } : {}),
+    ...(t.photoAlt ? { photoAlt: t.photoAlt } : {}),
   };
 }
 
 export function TutorDirectory({
   fontClass,
-  profiles = [],
+  tutors,
 }: {
   fontClass: string;
-  /** Tutor-written copy for anyone the studio has published. */
-  profiles?: TutorProfileOverride[];
+  /**
+   * Published tutors, from the database. There is deliberately no default and
+   * no built-in list: a hardcoded fallback is exactly what previously kept six
+   * people on this page after the database was emptied.
+   */
+  tutors: DirectoryTutor[];
 }) {
-  const bySlug = new Map(profiles.map((p) => [p.slug, p]));
+  if (tutors.length === 0) {
+    return (
+      <p className="py-16 text-center text-[0.95rem] opacity-60">
+        Our tutors are being introduced shortly. In the meantime, tell us what
+        you need and we&apos;ll match you personally.
+      </p>
+    );
+  }
 
   return (
     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-      {TUTORS.map((tutor, i) => (
+      {tutors.map((tutor, i) => (
         // The first row is above the fold on most screens, so those portraits
         // are not lazy-loaded.
         <TutorCard
           key={tutor.slug}
-          tutor={withProfile(tutor, bySlug.get(tutor.slug))}
+          tutor={toCard(tutor)}
           priority={i < 3}
           fontClass={fontClass}
         />

@@ -176,3 +176,108 @@ export async function publishedTutorProfiles(): Promise<
     return [];
   }
 }
+
+/** Everything the public directory and the subject pages render for one tutor. */
+export type PublicTutor = {
+  slug: string;
+  name: string;
+  /** Derived rather than stored — one less thing to keep in step with the name. */
+  initials: string;
+  headline: string;
+  bio: string[];
+  subjects: string[];
+  education: string[];
+  specialties: string[];
+  testPrep: string[];
+  levels: string | null;
+  photo: string | null;
+  photoAlt: string | null;
+  courses: string[];
+  /** Whether this tutor can actually be booked online right now. */
+  bookable: boolean;
+};
+
+/** "Samantha Yershov" -> "SY", "Jared" -> "J". */
+function initialsOf(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
+/**
+ * The tutors the public site may show.
+ *
+ * Gated on the same `bookable` switch as everything else public, so an
+ * unpublished profile — a tutor midway through onboarding, or one whose rate a
+ * manager has not set — is not on the site. This is the ONLY source of tutors
+ * for the directory and the subject pages; there is deliberately no hand-written
+ * fallback list, because a fallback is what previously kept six people on the
+ * site after the database was emptied.
+ *
+ * `course` filters to a subject page's own tutors.
+ */
+export async function publicTutors(course?: string): Promise<PublicTutor[]> {
+  try {
+    const rows = await prisma.user.findMany({
+      where: {
+        ...BOOKABLE,
+        ...(course ? { courses: { has: course } } : {}),
+      },
+      orderBy: { name: "asc" },
+      select: {
+        slug: true, name: true, headline: true, bio: true, subjects: true,
+        education: true, specialties: true, testPrep: true, levels: true,
+        photoUrl: true, photoAlt: true, courses: true,
+      },
+    });
+
+    return rows
+      .filter((r): r is typeof r & { slug: string } => Boolean(r.slug))
+      .map((r) => ({
+        slug: r.slug,
+        name: r.name,
+        initials: initialsOf(r.name),
+        headline: r.headline ?? "",
+        // Stored as one block; the card renders a paragraph per entry.
+        bio: (r.bio ?? "").split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean),
+        subjects: r.subjects,
+        education: r.education,
+        specialties: r.specialties,
+        testPrep: r.testPrep,
+        levels: r.levels,
+        photo: r.photoUrl,
+        photoAlt: r.photoAlt,
+        courses: r.courses,
+        bookable: true,
+      }));
+  } catch (error) {
+    // An empty directory is a worse failure here than elsewhere, but a 500 on
+    // the marketing site is worse still.
+    console.error("[tutors] could not load public tutors", error);
+    return [];
+  }
+}
+
+/**
+ * The tutors a subject page lists in its booking panel.
+ *
+ * Same source and same gate as the directory — a page cannot show somebody the
+ * studio has not published. `focus` is the tutor's own headline rather than a
+ * per-page line, which is the one thing lost in moving these lists out of
+ * source; a tutor now says once what they are the one to ask for.
+ */
+export async function bookingRoster(course: string): Promise<
+  { slug: string; initials: string; name: string; focus: string; image?: string }[]
+> {
+  const rows = await publicTutors(course);
+  return rows.map((t) => ({
+    slug: t.slug,
+    initials: t.initials,
+    name: t.name,
+    focus: t.headline,
+    ...(t.photo ? { image: t.photo } : {}),
+  }));
+}

@@ -3,8 +3,11 @@ import type { BookableTutor } from "@/lib/booking/tutors";
 
 import Link from "next/link";
 import { SentenceAnatomy } from "./v3/sentence-anatomy";
-import { BookingPanel, type BookingTrack } from "./v3/booking-panel";
-import { SAMANTHA, LEAH } from "./roster";
+import {
+  BookingPanel,
+  type BookingTrack,
+  type BookingTutor,
+} from "./v3/booking-panel";
 import {
   SubjectPage,
   SectionHead,
@@ -48,14 +51,6 @@ const TRACKS: BookingTrack[] = [
   { name: "Literature seminar", note: "Small group", mark: "seminar" },
 ];
 
-/**
- * The tutors offering this subject, from the shared roster. Real people only —
- * see roster.ts. This page previously listed three invented ones.
- */
-const TUTORS = [
-  { ...SAMANTHA, focus: "Writing & essay editing" },
-  { ...LEAH, focus: "English" },
-];
 
 const TRIVIUM = [
   {
@@ -78,8 +73,11 @@ const TRIVIUM = [
 export function ElaPageV3({
   /** Who is actually bookable, from the database. Threaded to the panel. */
   bookable = [],
+  /** Published tutors for this subject, from the database. */
+  roster = [],
 }: {
   bookable?: BookableTutor[];
+  roster?: BookingTutor[];
 } = {}) {
   return (
     <SubjectPage
@@ -132,7 +130,7 @@ export function ElaPageV3({
               blurb="Pick the strand your student needs and the tutor you'd like them to work with. We'll come back with times."
               hue="purple"
               tracks={TRACKS}
-              tutors={TUTORS}
+              tutors={roster}
             />
           ),
         },

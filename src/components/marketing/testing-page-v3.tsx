@@ -3,8 +3,11 @@ import type { BookableTutor } from "@/lib/booking/tutors";
 
 import Link from "next/link";
 import { AnswerSheet } from "./v3/answer-sheet";
-import { BookingPanel, type BookingTrack } from "./v3/booking-panel";
-import { SAMANTHA, JARED, ELLA, MAGGIE } from "./roster";
+import {
+  BookingPanel,
+  type BookingTrack,
+  type BookingTutor,
+} from "./v3/booking-panel";
 import {
   SubjectPage,
   SectionHead,
@@ -42,16 +45,6 @@ const TRACKS: BookingTrack[] = [
   { name: "Diagnostic only", note: "One sitting", mark: "diagnostic" },
 ];
 
-/**
- * The tutors offering this subject, from the shared roster. Real people only —
- * see roster.ts. This page previously listed three invented ones.
- */
-const TUTORS = [
-  { ...JARED, focus: "SHSAT, SAT & ACT" },
-  { ...ELLA, focus: "SHSAT & SAT" },
-  { ...SAMANTHA, focus: "SHSAT & state tests" },
-  { ...MAGGIE, focus: "SAT & ACT" },
-];
 
 const EXAMS = [
   {
@@ -78,8 +71,11 @@ const SEQUENCE = [
 export function TestingPageV3({
   /** Who is actually bookable, from the database. Threaded to the panel. */
   bookable = [],
+  /** Published tutors for this subject, from the database. */
+  roster = [],
 }: {
   bookable?: BookableTutor[];
+  roster?: BookingTutor[];
 } = {}) {
   return (
     <SubjectPage
@@ -137,7 +133,7 @@ export function TestingPageV3({
               trackLabel="Choose an exam"
               hue="orange"
               tracks={TRACKS}
-              tutors={TUTORS}
+              tutors={roster}
             />
           ),
         },

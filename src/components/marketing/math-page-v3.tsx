@@ -3,8 +3,11 @@ import type { BookableTutor } from "@/lib/booking/tutors";
 
 import Link from "next/link";
 import { CreationDotField } from "./v3/creation-dot-field";
-import { BookingPanel, type BookingTrack } from "./v3/booking-panel";
-import { JARED, ELLA, MAGGIE, LEAH } from "./roster";
+import {
+  BookingPanel,
+  type BookingTrack,
+  type BookingTutor,
+} from "./v3/booking-panel";
 import {
   SubjectPage,
   SectionHead,
@@ -45,16 +48,6 @@ const TRACKS: BookingTrack[] = [
   { name: "Calculus AB / BC", note: "Grades 11–12", mark: "calculus" },
 ];
 
-/**
- * The tutors offering this subject, from the shared roster. Real people only —
- * see roster.ts. This page previously listed three invented ones.
- */
-const TUTORS = [
-  { ...MAGGIE, focus: "Algebra, geometry & college prep" },
-  { ...JARED, focus: "Algebra through calculus" },
-  { ...ELLA, focus: "Geometry & trigonometry" },
-  { ...LEAH, focus: "Algebra" },
-];
 
 const QUADRIVIUM = [
   { latin: "Arithmetica", english: "Number", note: "Quantity at rest" },
@@ -66,8 +59,11 @@ const QUADRIVIUM = [
 export function MathPageV3({
   /** Who is actually bookable, from the database. Threaded to the panel. */
   bookable = [],
+  /** Published tutors for this subject, from the database. */
+  roster = [],
 }: {
   bookable?: BookableTutor[];
+  roster?: BookingTutor[];
 } = {}) {
   return (
     <SubjectPage
@@ -148,7 +144,7 @@ export function MathPageV3({
               blurb="Pick the course your student is in — or the one they're about to be — and the tutor you'd like them to work with. We'll come back with times."
               hue="blue"
               tracks={TRACKS}
-              tutors={TUTORS}
+              tutors={roster}
             />
           ),
         },

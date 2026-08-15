@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { TutorsPageV3 } from "@/components/marketing/tutors-page-v3";
-import { publishedTutorProfiles } from "@/lib/booking/tutors";
+import { publicTutors } from "@/lib/booking/tutors";
 
 export const metadata: Metadata = {
   title: "Our Tutors — Borough Prep",
@@ -9,8 +9,8 @@ export const metadata: Metadata = {
 };
 
 export default async function TutorsPage() {
-  // Only published tutors' own words reach the site — see the note in
-  // lib/booking/tutors.ts. A draft profile stays in the admin.
-  const profiles = await publishedTutorProfiles();
-  return <TutorsPageV3 profiles={profiles} />;
+  // The only source of tutors on this page. Nobody appears on the public site
+  // until a manager publishes them — there is no hardcoded fallback list.
+  const tutors = await publicTutors();
+  return <TutorsPageV3 tutors={tutors} />;
 }
