@@ -3,7 +3,6 @@ import type { BookableTutor } from "@/lib/booking/tutors";
 
 import Link from "next/link";
 import { CrtScreen } from "./v3/crt-screen";
-import { CircuitField } from "./v3/circuit-field";
 import {
   BookingPanel,
   type BookingTrack,
