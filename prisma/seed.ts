@@ -9,19 +9,37 @@ const prisma = new PrismaClient({
 const D = (v: string | number) => new Prisma.Decimal(v);
 
 async function main() {
-  const managerPassword = process.env.SEED_MANAGER_PASSWORD ?? "admin1234";
+  // Email and password both come from the environment. They used to be a
+  // hardcoded address and "admin1234", which is fine for a scratch database and
+  // exactly wrong for a real one — the account that owns every client record
+  // should not have a password that is written down in a repository.
+  const managerEmail = process.env.SEED_MANAGER_EMAIL;
+  const managerPassword = process.env.SEED_MANAGER_PASSWORD;
+
+  if (!managerEmail || !managerPassword) {
+    console.error(
+      "Set SEED_MANAGER_EMAIL and SEED_MANAGER_PASSWORD before seeding, e.g.\n" +
+        '  $env:SEED_MANAGER_EMAIL="you@example.com"\n' +
+        '  $env:SEED_MANAGER_PASSWORD="a-long-password"\n' +
+        "  npm run seed"
+    );
+    process.exitCode = 1;
+    return;
+  }
+
   const manager = await prisma.user.upsert({
-    where: { email: "siphongames.dev@gmail.com" },
-    update: { username: "admin" },
+    where: { email: managerEmail },
+    update: { username: "admin", role: "MANAGER" },
     create: {
-      email: "siphongames.dev@gmail.com",
+      email: managerEmail,
       username: "admin",
-      name: "Manager",
+      name: process.env.SEED_MANAGER_NAME ?? "Manager",
       role: "MANAGER",
       passwordHash: await bcrypt.hash(managerPassword, 10),
     },
   });
-  console.log(`Manager: ${manager.email} (password: ${managerPassword})`);
+  // The password is never echoed — whoever ran this already knows it.
+  console.log(`Manager: ${manager.email}`);
 
   if (process.env.SEED_SAMPLE_DATA !== "1") return;
 
