@@ -267,6 +267,19 @@ model Client {
   active      Boolean  @default(true)
   createdAt   DateTime @default(now())
 
+  // ── Parent sign-in ────────────────────────────────────────────────────────
+  // Deliberately on Client rather than a second User row with a CLIENT role.
+  // Client already owns the payments, the rate cards and the scheduled classes,
+  // so a parallel identity would have to be kept in sync with it forever, and
+  // every query would have to decide which of the two it meant.
+  //
+  // Both nullable: a client a manager typed in by hand has no login at all, and
+  // most never will. An account exists only once a parent chooses a password on
+  // their confirmation page after checkout.
+  /// Null until the parent sets one. Sign-in needs this AND `email`.
+  passwordHash String?
+  lastLoginAt  DateTime?
+
   rateCards        RateCard[]
   classSessions    ClassSession[]
   payments         ClientPayment[]

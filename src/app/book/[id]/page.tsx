@@ -7,6 +7,7 @@ import { getStripe, stripeConfigured } from "@/lib/stripe";
 import { commitBookingCheckout } from "@/lib/booking/commit";
 import { BUSINESS_TZ, formatInstant } from "@/lib/time-zone";
 import { formatUSD } from "@/lib/money";
+import { CreateAccountForm } from "@/components/marketing/v3/create-account-form";
 
 /**
  * Where Stripe sends the parent back to.
@@ -51,6 +52,9 @@ export default async function BookingPage({
     include: {
       tutor: { select: { name: true, timeZone: true } },
       slots: { orderBy: { startsAt: "asc" } },
+      // For the account offer below. The hash never leaves this server
+      // component; only whether one exists is read.
+      client: { select: { email: true, passwordHash: true } },
     },
   });
   if (!booking) notFound();
@@ -67,6 +71,7 @@ export default async function BookingPage({
           include: {
             tutor: { select: { name: true, timeZone: true } },
             slots: { orderBy: { startsAt: "asc" } },
+            client: { select: { email: true, passwordHash: true } },
           },
         });
       }
@@ -187,6 +192,43 @@ export default async function BookingPage({
             Times shown in {tz.replace("_", " ")}.
           </p>
         </div>
+
+        {/* An account, offered at the one moment we know this visitor owns
+            this booking: they are holding the URL Stripe redirected them to.
+            There is no email sending in this stack, so there is no other point
+            at which an account could be created — and none where the parent is
+            more obviously the right person.
+
+            Shown only once. `passwordHash` already set means the account
+            exists, and re-offering it would imply the link can still be used to
+            change the password, which the action refuses. */}
+        {paid && booking.client?.email && !booking.client.passwordHash && (
+          <div
+            className="mt-6 rounded-[0.8rem] border border-current/15 p-6"
+            style={{ backgroundColor: "var(--v3-card)" }}
+          >
+            <p className="font-[family-name:var(--font-editorial)] text-[1.5rem] leading-tight">
+              Keep track of your sessions
+            </p>
+            <p className="mt-1.5 mb-4 text-[0.9rem] leading-relaxed opacity-70">
+              Set a password and you can check your schedule, payments and
+              receipts any time.
+            </p>
+            <CreateAccountForm
+              bookingId={booking.id}
+              email={booking.client.email}
+            />
+          </div>
+        )}
+
+        {paid && booking.client?.passwordHash && (
+          <p className="mt-6 text-[0.9rem] opacity-70">
+            <Link href="/account" className="underline underline-offset-4">
+              Sign in to your account
+            </Link>{" "}
+            to see all your sessions and payments.
+          </p>
+        )}
 
         <div className="mt-9 flex flex-wrap gap-3">
           <Link
