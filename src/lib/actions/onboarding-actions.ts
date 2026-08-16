@@ -38,6 +38,12 @@ const profileSchema = z.object({
     .min(20, "A sentence or two, please.")
     .max(1500, "That's longer than a profile needs."),
   subjects: z.string().trim().max(500).optional().or(z.literal("")),
+  // Coerced from a number input, which posts a string. Blank means "not said"
+  // rather than zero — a card with "0 years tutoring" on it is worse than one
+  // with no line at all.
+  yearsTutoring: z
+    .union([z.literal(""), z.coerce.number().int().min(0).max(60)])
+    .optional(),
 });
 
 /** Step one: who they are and what they teach. */
@@ -53,6 +59,7 @@ export async function saveOnboardingProfileAction(
     headline: formData.get("headline"),
     bio: formData.get("bio"),
     subjects: formData.get("subjects"),
+    yearsTutoring: formData.get("yearsTutoring"),
   });
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   const data = parsed.data;
@@ -73,6 +80,10 @@ export async function saveOnboardingProfileAction(
       headline: data.headline,
       bio: data.bio,
       subjects,
+      yearsTutoring:
+        data.yearsTutoring === "" || data.yearsTutoring === undefined
+          ? null
+          : data.yearsTutoring,
     },
   });
 

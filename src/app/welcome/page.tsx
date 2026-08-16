@@ -31,6 +31,7 @@ export default async function WelcomePage() {
       headline: true,
       bio: true,
       subjects: true,
+      yearsTutoring: true,
       onboardedAt: true,
       bookable: true,
       stripeAccountId: true,
@@ -58,6 +59,7 @@ export default async function WelcomePage() {
           headline: me.headline ?? "",
           bio: me.bio ?? "",
           subjects: me.subjects.join(", "),
+          yearsTutoring: me.yearsTutoring?.toString() ?? "",
         }}
         availability={me.availabilityRules}
       />

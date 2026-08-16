@@ -3,12 +3,40 @@
 import "dotenv/config";
 import { defineConfig } from "prisma/config";
 
+/**
+ * Migrations must not run through a connection pooler.
+ *
+ * `prisma migrate` takes a Postgres ADVISORY LOCK to stop two deploys migrating
+ * at once. Advisory locks are scoped to a session, and a transaction pooler
+ * hands out a different backend per statement — so the lock is taken on one
+ * session and looked for on another, and the migration sits there until it
+ * times out with P1002 "Timed out trying to acquire a postgres advisory lock".
+ * It is intermittent, which makes it look like a flaky database rather than a
+ * misconfiguration.
+ *
+ * Neon's pooled host is the direct one with "-pooler" inserted, so the direct
+ * URL is recoverable from the pooled one. DIRECT_URL wins if it is set, for
+ * hosts where the two are not related by a string edit.
+ *
+ * The application itself keeps using the POOLED url (see lib/prisma.ts) — that
+ * is the right choice for serverless, where every request would otherwise open
+ * its own connection. Only the CLI reads this file.
+ */
+function migrationUrl() {
+  const direct = process.env.DIRECT_URL;
+  if (direct) return direct;
+
+  const url = process.env.DATABASE_URL ?? "";
+  // A no-op on any host that is not pooled.
+  return url.replace("-pooler.", ".");
+}
+
 export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
     path: "prisma/migrations",
   },
   datasource: {
-    url: process.env["DATABASE_URL"],
+    url: migrationUrl(),
   },
 });

@@ -185,6 +185,9 @@ model User {
   testPrep    String[]  @default([])
   /// Grade range, where the practice states one, e.g. "Grades 6–12".
   levels      String?
+  /// How long they have been tutoring, in whole years. Null where they have not
+  /// said — the card omits the line rather than printing a guess or a zero.
+  yearsTutoring Int?
   /// Path under /public, e.g. "/tutors/jared.webp". Set by a manager rather
   /// than the tutor: there is no upload in this stack, and a photograph is the
   /// one part of a profile the studio wants to have seen before it is on the

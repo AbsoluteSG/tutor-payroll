@@ -97,6 +97,8 @@ export type BookingTutor = {
   education?: string;
   /** Grade range, where they gave one. */
   levels?: string;
+  /** Whole years teaching. Omitted where they have not said. */
+  years?: number;
 };
 
 type Props = {
@@ -322,7 +324,7 @@ function TutorPlate({
           image={tutor.image}
           initials={tutor.initials}
           name={tutor.name}
-          className="h-[clamp(8rem,20svh,13rem)] w-full"
+          className="h-[clamp(6rem,14svh,9.5rem)] w-full"
         />
         {rate ? (
           <span
@@ -334,40 +336,41 @@ function TutorPlate({
         ) : null}
       </span>
 
-      <span className="flex flex-1 flex-col gap-2 p-3.5 sm:p-4">
-        <span className="block">
-          <span className="block font-[family-name:var(--font-editorial)] text-[1.4rem] leading-none tracking-tight sm:text-[1.7rem]">
-            {tutor.name}
-          </span>
-          <span className="mt-1.5 block font-mono text-[0.62rem] leading-snug tracking-[0.08em] uppercase opacity-65">
-            {tutor.focus}
-          </span>
+      <span className="flex flex-1 flex-col gap-1.5 p-3">
+        <span className="block font-[family-name:var(--font-editorial)] text-[1.25rem] leading-none tracking-tight sm:text-[1.45rem]">
+          {tutor.name}
+        </span>
+        <span className="block font-mono text-[0.56rem] leading-snug tracking-[0.08em] uppercase opacity-65">
+          {tutor.focus}
         </span>
 
-        {tutor.education ? (
-          <span className="block text-[0.78rem] leading-snug opacity-70">
+        {/* Experience and credential on one line — the two things a parent is
+            actually comparing between cards, and the pair that used to cost
+            two separate rows. */}
+        {tutor.years != null || tutor.education ? (
+          // Clamped too: in a row of five these columns are ~150px, and an
+          // unclamped institution name runs to four lines on its own.
+          //
+          // No `block` here. line-clamp needs display:-webkit-box, and a later
+          // `block` silently overrides it — the clamp then applies to nothing
+          // and the text renders in full, which is what made these cards 447px.
+          <span className="line-clamp-2 text-[0.72rem] leading-snug opacity-70">
+            {tutor.years != null ? (
+              <span className="font-semibold">
+                {tutor.years} {tutor.years === 1 ? "year" : "years"} tutoring
+              </span>
+            ) : null}
+            {tutor.years != null && tutor.education ? " · " : null}
             {tutor.education}
           </span>
         ) : null}
 
         {tutor.blurb ? (
-          // Clamped: the cards sit in a row and must stay the same height, and
-          // a family choosing between people is scanning rather than reading.
-          <span className="line-clamp-3 block text-[0.82rem] leading-relaxed opacity-70">
+          // Clamped: the cards sit in one row and must stay the same height,
+          // and a family choosing between people is scanning rather than
+          // reading. The full profile is on /tutors.
+          <span className="line-clamp-2 text-[0.74rem] leading-snug opacity-65">
             {tutor.blurb}
-          </span>
-        ) : null}
-
-        {tutor.specialties && tutor.specialties.length > 0 ? (
-          <span className="mt-auto flex flex-wrap gap-1.5 pt-1">
-            {tutor.specialties.map((s) => (
-              <span
-                key={s}
-                className="rounded-full border border-current/25 px-2 py-0.5 font-mono text-[0.55rem] tracking-[0.08em] uppercase opacity-80"
-              >
-                {s}
-              </span>
-            ))}
           </span>
         ) : null}
       </span>
@@ -408,12 +411,15 @@ function NoPreferencePlate({
       >
         ?
       </span>
-      <span className="block font-[family-name:var(--font-editorial)] text-[1.4rem] leading-none tracking-tight sm:text-[1.7rem]">
+      <span className="block font-[family-name:var(--font-editorial)] text-[1.25rem] leading-none tracking-tight sm:text-[1.45rem]">
         No preference
       </span>
-      <span className="block text-[0.82rem] leading-relaxed opacity-70">
-        Tell us about your student and we&apos;ll match them to the tutor who
-        fits — we&apos;ll come back to you rather than booking a time now.
+      {/* Short on purpose: this card sits in the same row as the tutors and
+          sets its height if it runs long. It only has to say that picking it
+          means a callback rather than a booked time. */}
+      <span className="block text-[0.72rem] leading-snug opacity-70">
+        We&apos;ll match your student and come back to you, rather than booking
+        a time now.
       </span>
     </button>
   );
@@ -661,10 +667,16 @@ export function BookingPanel({
            paragraph do not fit a 13rem tile beside a summary column. The widget
            takes over at step three, where picking a time really is form-filling. */
         <div className="mt-7">
+          {/* One row, always. `grid-flow-col` with `auto-cols-fr` divides the
+              width evenly however many tutors there are, rather than wrapping
+              to a second row and pushing the call to action off a stage that
+              cannot scroll. Past about five it would get cramped, so the row
+              scrolls sideways instead of shrinking indefinitely — the cards
+              keep a floor width and the overflow is reachable. */}
           <div
             role="radiogroup"
             aria-label="Tutor"
-            className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3"
+            className="v3-no-scrollbar grid auto-cols-fr grid-flow-col gap-2.5 overflow-x-auto pb-1 sm:gap-3 [&>*]:min-w-[8.5rem]"
           >
             {tutors.map((t) => {
               const b = bySlug.get(t.slug);

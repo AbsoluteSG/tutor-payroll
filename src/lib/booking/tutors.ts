@@ -190,6 +190,8 @@ export type PublicTutor = {
   specialties: string[];
   testPrep: string[];
   levels: string | null;
+  /** Whole years teaching, or null where they have not said. */
+  years: number | null;
   photo: string | null;
   photoAlt: string | null;
   courses: string[];
@@ -230,7 +232,7 @@ export async function publicTutors(course?: string): Promise<PublicTutor[]> {
       select: {
         slug: true, name: true, headline: true, bio: true, subjects: true,
         education: true, specialties: true, testPrep: true, levels: true,
-        photoUrl: true, photoAlt: true, courses: true,
+        photoUrl: true, photoAlt: true, courses: true, yearsTutoring: true,
       },
     });
 
@@ -248,6 +250,7 @@ export async function publicTutors(course?: string): Promise<PublicTutor[]> {
         specialties: r.specialties,
         testPrep: r.testPrep,
         levels: r.levels,
+        years: r.yearsTutoring,
         photo: r.photoUrl,
         photoAlt: r.photoAlt,
         courses: r.courses,
@@ -280,6 +283,7 @@ export async function bookingRoster(course: string): Promise<
     specialties: string[];
     education?: string;
     levels?: string;
+    years?: number;
   }[]
 > {
   const rows = await publicTutors(course);
@@ -295,5 +299,6 @@ export async function bookingRoster(course: string): Promise<
     specialties: t.specialties.slice(0, 3),
     ...(t.education[0] ? { education: t.education[0] } : {}),
     ...(t.levels ? { levels: t.levels } : {}),
+    ...(t.years != null ? { years: t.years } : {}),
   }));
 }

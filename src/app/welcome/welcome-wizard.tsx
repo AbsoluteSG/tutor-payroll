@@ -74,6 +74,7 @@ export function WelcomeWizard({
     headline: string;
     bio: string;
     subjects: string;
+    yearsTutoring: string;
   };
   availability: Rule[];
 }) {
@@ -171,6 +172,7 @@ function ProfileStep({
     headline: string;
     bio: string;
     subjects: string;
+    yearsTutoring: string;
   };
   onDone: () => void;
 }) {
@@ -243,6 +245,23 @@ function ProfileStep({
             />
             <p className="text-xs text-muted-foreground">
               One line. What a parent should come to you for.
+            </p>
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="yearsTutoring">Years tutoring (optional)</Label>
+            <Input
+              id="yearsTutoring"
+              name="yearsTutoring"
+              type="number"
+              min={0}
+              max={60}
+              defaultValue={profile.yearsTutoring}
+              placeholder="e.g. 4"
+              className="max-w-32"
+            />
+            <p className="text-xs text-muted-foreground">
+              Shown on your card. Leave blank and it simply won&apos;t appear.
             </p>
           </div>
 
