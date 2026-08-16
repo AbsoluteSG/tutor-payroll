@@ -573,7 +573,21 @@ export function BookingPanel({
   }, [live, chosen, submitting, sessionCount, subject, track, viewerTz, form]);
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <div
+      className="mx-auto max-w-6xl"
+      // Hold the page still from the moment a visitor commits to booking.
+      //
+      // The subject pages are a fixed sequence driven by wheel and touch, so
+      // without this a scroll part-way through checkout slides the stage on to
+      // the next section and takes a half-filled form with it. Step one is
+      // exempt: nothing has been entered yet, and somebody still browsing the
+      // exams should be able to scroll past them.
+      //
+      // Only wheel, touch and keys are suppressed — see use-virtual-scroll.ts.
+      // The section rail, the scroll cue and Back all still work, so this can
+      // hold the page without ever trapping anyone on it.
+      {...(step > 0 ? { "data-sequence-lock": "booking" } : {})}
+    >
       {/* The section keeps the page's voice; the card below it does not. */}
       <div className="flex items-baseline justify-between gap-4 border-b border-current/20 pb-2">
         <h2 className="font-[family-name:var(--font-editorial)] text-[2.3rem] tracking-tight sm:text-[2.8rem]">

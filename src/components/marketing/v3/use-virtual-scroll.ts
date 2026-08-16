@@ -97,6 +97,26 @@ function scrollableAncestor(
   return null;
 }
 
+/**
+ * Whether a section has asked the sequence to hold still.
+ *
+ * A section renders `data-sequence-lock` while it is mid-task — the booking
+ * panel does it from the moment a visitor picks a course. Without it, a scroll
+ * during checkout slides the whole stage on to the next section and takes a
+ * half-filled form with it, which reads as the page throwing your work away.
+ *
+ * Deliberately a DOM marker rather than a prop: the sequence shell knows
+ * nothing about what its panels contain, and threading a lock down through
+ * every page and panel to reach one form would couple all of them to it.
+ *
+ * The lock never traps anybody. It only ignores WHEEL, TOUCH and KEY input —
+ * the section rail, the scroll cue and the panel's own Back button all call
+ * goTo/setStep directly and keep working.
+ */
+function sequenceLocked() {
+  return Boolean(document.querySelector("[data-sequence-lock]"));
+}
+
 type Options = {
   /** Index of the last section. */
   max: number;
@@ -128,12 +148,14 @@ export function useVirtualScroll({ max, enabled, onActiveChange }: Options) {
 
     function onWheel(event: WheelEvent) {
       // Yield to a panel that still has content to scroll; the sequence resumes
-      // once it reaches its end.
+      // once it reaches its end. Checked BEFORE the lock, so a scrollable region
+      // inside a locked section still scrolls.
       if (scrollableAncestor(event.target, Math.sign(event.deltaY), host!)) {
         return;
       }
       // Without this the browser would scroll whatever ancestor can scroll.
       event.preventDefault();
+      if (sequenceLocked()) return;
       target.current = clamp(target.current + event.deltaY / STEP_PX);
     }
 
@@ -150,6 +172,10 @@ export function useVirtualScroll({ max, enabled, onActiveChange }: Options) {
         return;
       }
       event.preventDefault();
+      if (sequenceLocked()) {
+        touchY = y;
+        return;
+      }
       // Touch travel is shorter than a wheel gesture, so it is geared up.
       target.current = clamp(target.current + (touchY - y) / (STEP_PX * 0.45));
       touchY = y;
@@ -163,6 +189,9 @@ export function useVirtualScroll({ max, enabled, onActiveChange }: Options) {
       " ": 1,
     };
     function onKey(event: KeyboardEvent) {
+      // Space and the arrows are how somebody moves around a form; while a
+      // section holds the lock they must not also move the stage.
+      if (sequenceLocked()) return;
       if (event.key === "Home") {
         event.preventDefault();
         target.current = 0;
