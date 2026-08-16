@@ -270,7 +270,17 @@ export async function publicTutors(course?: string): Promise<PublicTutor[]> {
  * source; a tutor now says once what they are the one to ask for.
  */
 export async function bookingRoster(course: string): Promise<
-  { slug: string; initials: string; name: string; focus: string; image?: string }[]
+  {
+    slug: string;
+    initials: string;
+    name: string;
+    focus: string;
+    image?: string;
+    blurb?: string;
+    specialties: string[];
+    education?: string;
+    levels?: string;
+  }[]
 > {
   const rows = await publicTutors(course);
   return rows.map((t) => ({
@@ -279,5 +289,11 @@ export async function bookingRoster(course: string): Promise<
     name: t.name,
     focus: t.headline,
     ...(t.photo ? { image: t.photo } : {}),
+    // One paragraph, not the whole profile: the card is a choice between
+    // people, and the full biography lives on /tutors for anyone who wants it.
+    ...(t.bio[0] ? { blurb: t.bio[0] } : {}),
+    specialties: t.specialties.slice(0, 3),
+    ...(t.education[0] ? { education: t.education[0] } : {}),
+    ...(t.levels ? { levels: t.levels } : {}),
   }));
 }

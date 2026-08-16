@@ -89,6 +89,14 @@ export type BookingTutor = {
   focus: string;
   /** Path under /public once a photograph exists. */
   image?: string;
+  /** One paragraph. The full biography stays on /tutors. */
+  blurb?: string;
+  /** At most three. Chips on the card. */
+  specialties?: string[];
+  /** Their headline credential — the thing a parent is actually scanning for. */
+  education?: string;
+  /** Grade range, where they gave one. */
+  levels?: string;
 };
 
 type Props = {
@@ -136,69 +144,6 @@ function SummaryRow({ label, value }: { label: string; value: string | null }) {
         {value ?? "—"}
       </span>
     </div>
-  );
-}
-
-function Tile({
-  selected,
-  onSelect,
-  title,
-  note,
-  meta,
-  portrait,
-}: {
-  selected: boolean;
-  onSelect: () => void;
-  title: string;
-  note: string;
-  /** Right-aligned trailing detail — the rate, on the tutor step. */
-  meta?: string;
-  portrait?: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      role="radio"
-      aria-checked={selected}
-      onClick={onSelect}
-      className="flex items-center gap-3 rounded-xl border border-current/15 p-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
-      style={
-        selected
-          ? { borderColor: FILL, boxShadow: `0 0 0 1px ${FILL}` }
-          : undefined
-      }
-    >
-      {portrait}
-      {/* The rate sits on the title's line rather than beside the whole block,
-          so the note keeps the full width of the tile. Put it alongside the
-          note instead and "Algebra through calculus" truncates to "Algebra
-          thr…", which trades the more useful line for the shorter one. */}
-      <span className="min-w-0 flex-1">
-        <span className="flex items-baseline justify-between gap-2">
-          <span className="truncate text-[1.05rem] font-semibold tracking-tight">
-            {title}
-          </span>
-          {/* Literal space: the flex row is visual only, and without it a
-              screen reader announces "Maggie$225/hr". */}
-          {meta ? (
-            <>
-              {" "}
-              <span className="shrink-0 text-[0.9rem] font-semibold tabular-nums opacity-70">
-                {meta}
-              </span>
-            </>
-          ) : null}
-        </span>
-        <span className="block truncate text-[0.9rem] opacity-60">{note}</span>
-      </span>
-      <span
-        aria-hidden
-        className="grid size-5 shrink-0 place-items-center rounded-full border border-current/25"
-        style={selected ? { backgroundColor: FILL, borderColor: FILL } : undefined}
-      >
-        {selected ? <Check className="size-3 text-white" /> : null}
-      </span>
-    </button>
   );
 }
 
@@ -306,6 +251,169 @@ function TrackPlate({
         <span className="mt-2 block font-mono text-[0.68rem] leading-snug tracking-[0.1em] uppercase opacity-60 sm:text-[0.8rem]">
           {note}
         </span>
+      </span>
+    </button>
+  );
+}
+
+/**
+ * A tutor as a plate, in the same language as the track plates on step one.
+ *
+ * Deliberately more than a name and a rate. By this point a family has decided
+ * what they want taught and is choosing WHO — which is the only step where they
+ * are picking a person rather than an option, and the one where a card that
+ * says "Jared · $225/hr" gives them nothing to choose on. So the photograph
+ * leads, and the credential, the specialisms and a paragraph in the tutor's own
+ * words are all on the card. The full profile stays on /tutors for anyone who
+ * wants to read further.
+ */
+function TutorPlate({
+  tutor,
+  rate,
+  selected,
+  onSelect,
+  hue,
+}: {
+  tutor: BookingTutor;
+  rate?: string;
+  selected: boolean;
+  onSelect: () => void;
+  hue: string;
+}) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={selected}
+      onClick={onSelect}
+      // Same selection mechanism as the track plates: take the opposite skin
+      // rather than swapping colours by hand, so every token inside — the hue
+      // included — resolves against the ground it has become.
+      className={`${
+        selected ? "v3-invert" : ""
+      } flex cursor-pointer flex-col overflow-hidden rounded-[0.7rem] text-left transition-[transform,box-shadow] duration-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--v3-accent)]`}
+      style={{
+        backgroundColor: selected
+          ? PAPER
+          : `color-mix(in oklab, ${hue} 5%, ${CARD})`,
+        color: INK,
+        boxShadow: selected
+          ? "0 22px 48px -18px rgba(0,0,0,0.5)"
+          : "0 10px 26px -18px rgba(0,0,0,0.4)",
+        outline: `1px solid ${
+          selected
+            ? "transparent"
+            : "color-mix(in oklab, var(--v3-ink) 12%, transparent)"
+        }`,
+        transform: selected ? "translateY(-0.3rem)" : undefined,
+      }}
+    >
+      {/* The photograph, full bleed across the top. A tutor without one gets
+          the monogram plate rather than a substitute face.
+
+          An explicit height, not an aspect: TutorPortrait sets aspect-ratio 4/5
+          inline, and at a third of this row that is a 480px portrait — the card
+          then runs past the bottom of a stage that cannot scroll, taking the
+          Continue button with it. Width and height both being definite is what
+          makes the browser ignore the ratio and crop instead. Viewport units so
+          it gives way on a short window, as the track plates do. */}
+      <span className="relative block w-full overflow-hidden">
+        <TutorPortrait
+          image={tutor.image}
+          initials={tutor.initials}
+          name={tutor.name}
+          className="h-[clamp(8rem,20svh,13rem)] w-full"
+        />
+        {rate ? (
+          <span
+            className="absolute right-2 bottom-2 rounded-full px-2.5 py-1 font-mono text-[0.62rem] tracking-[0.1em] tabular-nums"
+            style={{ backgroundColor: hue, color: PAPER }}
+          >
+            {rate}
+          </span>
+        ) : null}
+      </span>
+
+      <span className="flex flex-1 flex-col gap-2 p-3.5 sm:p-4">
+        <span className="block">
+          <span className="block font-[family-name:var(--font-editorial)] text-[1.4rem] leading-none tracking-tight sm:text-[1.7rem]">
+            {tutor.name}
+          </span>
+          <span className="mt-1.5 block font-mono text-[0.62rem] leading-snug tracking-[0.08em] uppercase opacity-65">
+            {tutor.focus}
+          </span>
+        </span>
+
+        {tutor.education ? (
+          <span className="block text-[0.78rem] leading-snug opacity-70">
+            {tutor.education}
+          </span>
+        ) : null}
+
+        {tutor.blurb ? (
+          // Clamped: the cards sit in a row and must stay the same height, and
+          // a family choosing between people is scanning rather than reading.
+          <span className="line-clamp-3 block text-[0.82rem] leading-relaxed opacity-70">
+            {tutor.blurb}
+          </span>
+        ) : null}
+
+        {tutor.specialties && tutor.specialties.length > 0 ? (
+          <span className="mt-auto flex flex-wrap gap-1.5 pt-1">
+            {tutor.specialties.map((s) => (
+              <span
+                key={s}
+                className="rounded-full border border-current/25 px-2 py-0.5 font-mono text-[0.55rem] tracking-[0.08em] uppercase opacity-80"
+              >
+                {s}
+              </span>
+            ))}
+          </span>
+        ) : null}
+      </span>
+    </button>
+  );
+}
+
+/** "Match me" — the same plate shape, without a person on it. */
+function NoPreferencePlate({
+  selected,
+  onSelect,
+  hue,
+}: {
+  selected: boolean;
+  onSelect: () => void;
+  hue: string;
+}) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={selected}
+      onClick={onSelect}
+      className={`${
+        selected ? "v3-invert" : ""
+      } flex cursor-pointer flex-col items-start justify-end gap-2 rounded-[0.7rem] border-2 border-dashed p-3.5 text-left transition-[transform,box-shadow] duration-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--v3-accent)] sm:p-4`}
+      style={{
+        backgroundColor: selected ? PAPER : "transparent",
+        borderColor: `color-mix(in oklab, var(--v3-ink) 25%, transparent)`,
+        color: INK,
+        transform: selected ? "translateY(-0.3rem)" : undefined,
+      }}
+    >
+      <span
+        aria-hidden
+        className="font-[family-name:var(--font-editorial)] text-[2.4rem] leading-none opacity-30"
+        style={{ color: hue }}
+      >
+        ?
+      </span>
+      <span className="block font-[family-name:var(--font-editorial)] text-[1.4rem] leading-none tracking-tight sm:text-[1.7rem]">
+        No preference
+      </span>
+      <span className="block text-[0.82rem] leading-relaxed opacity-70">
+        Tell us about your student and we&apos;ll match them to the tutor who
+        fits — we&apos;ll come back to you rather than booking a time now.
       </span>
     </button>
   );
@@ -532,6 +640,68 @@ export function BookingPanel({
             </button>
           </div>
         </div>
+      ) : step === 1 ? (
+        /* ── Step two: the tutors, on the same stage as the tracks ──
+           Also outside the widget. Choosing a person is still browsing, and it
+           is the step with the most to say — a photograph, a credential and a
+           paragraph do not fit a 13rem tile beside a summary column. The widget
+           takes over at step three, where picking a time really is form-filling. */
+        <div className="mt-7">
+          <div
+            role="radiogroup"
+            aria-label="Tutor"
+            className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3"
+          >
+            {tutors.map((t) => {
+              const b = bySlug.get(t.slug);
+              return (
+                <TutorPlate
+                  key={t.slug}
+                  tutor={t}
+                  // The rate belongs on this step because this is the step where
+                  // it is a decision — the tiers exist so a family can choose,
+                  // and they cannot choose against a number they have to leave
+                  // the panel to find.
+                  rate={SHOW_PRICING && b ? `$${b.hourlyRate}/hr` : undefined}
+                  selected={t.slug === tutor?.slug}
+                  onSelect={() => setTutor(t)}
+                  hue={plateHue}
+                />
+              );
+            })}
+            <NoPreferencePlate
+              selected={tutor === null}
+              onSelect={() => setTutor(null)}
+              hue={plateHue}
+            />
+          </div>
+
+          <div className="mt-7 flex flex-wrap items-center justify-between gap-4">
+            <p className="v3-micro font-mono uppercase opacity-55">
+              Step 02 / 04 &mdash; {STEPS[1]}
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => setStep(0)}
+                className="v3-label inline-flex items-center gap-2.5 rounded-full border border-current/25 px-7 py-4 font-mono uppercase transition-colors hover:border-current/60"
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                onClick={() => setStep(2)}
+                className="v3-label group inline-flex items-center gap-2.5 rounded-full px-7 py-4 font-mono uppercase transition-transform duration-200 hover:scale-[1.02] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--v3-accent)]"
+                style={{ backgroundColor: plateHue, color: PAPER }}
+              >
+                Continue
+                <span className="inline-block transition-transform duration-300 group-hover:translate-x-1">
+                  &rarr;
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
       ) : (
       /* ── The widget, from step two on ── */
       <div
@@ -581,44 +751,6 @@ export function BookingPanel({
           {/* Current step. The min-height keeps the shorter ones from
               collapsing as the reader moves between them. */}
           <div className="min-h-[13.5rem] p-4 sm:p-5">
-            {step === 1 ? (
-              <div role="radiogroup" aria-label="Tutor" className="grid gap-2 sm:grid-cols-2">
-                {tutors.map((t) => {
-                  const b = bySlug.get(t.slug);
-                  return (
-                    <Tile
-                      key={t.slug}
-                      selected={t.slug === tutor?.slug}
-                      onSelect={() => setTutor(t)}
-                      title={t.name}
-                      note={t.focus}
-                      // The rate belongs on this step because this is the step
-                      // where it is a decision — the tiers exist so a family can
-                      // choose, and they cannot choose against a number they
-                      // have to leave the panel to find.
-                      meta={
-                        SHOW_PRICING && b ? `$${b.hourlyRate}/hr` : undefined
-                      }
-                      portrait={
-                        <TutorPortrait
-                          image={t.image}
-                          initials={t.initials}
-                          name={t.name}
-                          className="aspect-square w-[2.75rem] shrink-0 rounded-full"
-                        />
-                      }
-                    />
-                  );
-                })}
-                <Tile
-                  selected={tutor === null}
-                  onSelect={() => setTutor(null)}
-                  title="No preference"
-                  note="Matched to the student"
-                />
-              </div>
-            ) : null}
-
             {step === 2 ? (
               <>
                 {!live ? (
